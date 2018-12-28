@@ -1,7 +1,7 @@
 # F0AM
 Framework for 0-D Atmospheric Modeling
 
-Most recent version: **v3.2
+Most recent version: **v3.2**
 
 ### INTRODUCTION
 F0AM is a MATLAB program for simulating atmospheric chemistry systems. It is designed to be user-friendly and adaptable to a variety of typical applications, including:
