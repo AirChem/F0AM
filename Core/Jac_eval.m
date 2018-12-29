@@ -5,7 +5,9 @@ function Jac = Jac_eval(t,conc,param)
 % For info on inputs, see dydt_eval.m.
 % OUTPUT is the Jacobian matrix dF/dy, which has dimensions of nSp x nSp.
 % For more info on how it is used, see the odeset help.
-% 20120723 GMW 
+%
+% 20120723 GMW
+% 20180320 GMW Added Gaussian dispersion option.
 
 %%%%%BREAKOUT PARAMETERS%%%%%
 k = param{1};
@@ -14,6 +16,7 @@ iG = param{3};
 iRO2 = param{4};
 iHold = param{5};
 kdil = param{6};
+tgauss = param{7};
 
 [nRx,nSp] = size(f);
 
@@ -35,7 +38,16 @@ DratesDy(i2,iG(i2,1)) = 2*DratesDy(i2,iG(i2,1));
 
 %calculate Jacobian
 Jac = f'*DratesDy;
+
+% add dilution
 i = sub2ind([nSp nSp],3:nSp,3:nSp); %get diagonal indices
-Jac(i) = Jac(i) - kdil; %dilution
+if ~isinf(tgauss)
+    Jac(i) = Jac(i) - 1./(tgauss + 2*t); %gaussian dispersion
+else
+    Jac(i) = Jac(i) - kdil; %1st-order dilution
+end
+
+%etc
 Jac(iHold,:) = 0; %fixed species
+
 

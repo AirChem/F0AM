@@ -20,7 +20,7 @@ end
 
 hold(h,'on')
 h11 = plot(h,lim,lim,'k--');
-text(0.9,0.9,'1:1')
+text(0.9,0.9,'1:1','edgecolor','k','backgroundcolor','w','fontsize',12)
 
 if nargout
     hline = h11;

@@ -9,7 +9,7 @@
 
 if length(dbstack)==1 %only execute if top-level (skip if called from ExampleSetup_MechCompare.m)
     clear
-    MECHANISM = 'GEOSCHEM'; % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, GEOSCHEM
+    MECHANISM = 'MCMv331'; % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, GEOSCHEM
     makeplots = 1; %flag 0 or 1 for making plots after run
 end
 
@@ -46,7 +46,7 @@ SolarParam.lat          = D.GpsLat; %degrees, range -90:90
 SolarParam.lon          = D.GpsLon; %degrees, range -180:180
 SolarParam.alt          = D.PAlt; %meters
 SolarParam.startTime    = [2013*o 6*o 12*o 0*o 0*o D.AOCTimewave]; %year month day hour min sec
-SolarParam.nDays        = 5; %integer
+SolarParam.nDays        = 1; %integer. Set to 1 for example, but should probably be longer (3 days or more) to reach steady state
 clear o
 
 %% METEOROLOGY
@@ -197,15 +197,17 @@ BkgdConc = {...
 "IntTime" is the integration time for each solar cycle mini-step.
     Because we are using the SolarCycle option, this represents the interval for SZA updates
     and should be set to an integer divisor of 86400 seconds (= 1 day).
+"GoParallel" can be used if you have the parallel computing toolbox since steps are independent.
 %}
 
 ModelOptions.Verbose        = 1; %flag for verbose command window output
 ModelOptions.EndPointsOnly  = 1; %flag for concentration and rate outputs
 ModelOptions.LinkSteps      = 0; %flag for using end-points of one run to initialize next run
 ModelOptions.Repeat         = 1; %number of times to loop through all constraints
-ModelOptions.SavePath       = ['FlightSSoutput_' MECHANISM]; %partial or full path or empty
+ModelOptions.SavePath       = ['FlightSSoutput_' MECHANISM '_2']; %partial or full path or empty
 ModelOptions.TimeStamp      = D.AOCTimewave; %time stamp to overwrite S.Time model output
 ModelOptions.IntTime        = 3600;
+ModelOptions.GoParallel     = 0;
 
 %% MODEL RUN
 % Now we call the model. Note this may take several minutes to run, depending on your system.

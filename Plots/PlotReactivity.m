@@ -12,7 +12,7 @@ function [Reactivity,ReactivityNames] = PlotReactivity(Spname,S,Rct2plot,varargi
 %   the plot legend) should be the first string in the sub-cell array.
 % varargin: One can specify several options as name-value pairs:
 %
-%           PlotRates(...,'sumEq',value)
+%           PlotReactivity(...,'sumEq',value)
 %               Specifies a 0-1 flag for combining equilibrium reactions
 %               (e.g. HO2 + NO2 = HO2NO2 and its reverse reaction).
 %               Default: 0

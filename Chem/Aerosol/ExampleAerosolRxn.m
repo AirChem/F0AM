@@ -1,6 +1,6 @@
 %ExampleAerosolRxn.m
 %An example, in case it is needed.
-%111218 GMW
+%20111218 GMW
 
 %particle parameters
 rp = 150e-7;    %mean particle radius, cm
@@ -12,9 +12,11 @@ Dg = 0.042;     %gas diffusion coefficient, cm2/s
 MM = 136; %molecular mass, g/mol
 w = mean_speed(MM,T); %mean molecular speed, cm/s
 
+kmt = ((rp./Dg)+(4./w./gamma)).^-1; % mass transfer velocity, cm/s
+
 i=i+1;
 Rnames{i} = 'StickyThing = AER';
-k(:,i) = k_mass_transfer_A(rp,Dg,gamma,w).*S;
+k(:,i) = kmt.*S;
 Gstr{i} = 'StickyThing';
 fStickyThing(i)=-1; fAER(i)=1;
 

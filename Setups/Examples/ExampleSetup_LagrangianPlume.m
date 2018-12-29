@@ -22,23 +22,34 @@ Dilution is calculated using the change in CO over each model step.
 All calculated J-values will be scaled to J4.
 %}
 
-%kdil calculation using CO decay
+%kdil calculation using CO decay and inversion of dilution equation
+% dX/dt = -kdil*(X - Xb)
 dCOdt        = diff(DAQ.CO)./diff(DAQ.TIME); %loss rate
 dCOdt(end+1) = dCOdt(end);
 COmid        = (DAQ.CO + [DAQ.CO(2:end);DAQ.CO(end)])/2; %CO in middle of step
 kdil         = -dCOdt./(COmid-95);
+
+% similar calculation for tgauss
+%dX/dt = (-1/(tgauss + 2t))*(X - Xb)
+tgauss = 1./kdil - 2.*DAQ.TIME;
+% doesn't work great (gives negative numbers, probably b/c not in center of plume)
+% instead just fit it to kdil for best guess
+tgauss = fminsearch(@(x) sum((kdil - 1./(x + 2*DAQ.TIME)).^2),300);
+
+% USER: try running with either tgauss or kdil and see how results compare!
 
 Met = {...
     'P'             DAQ.P;... %Pressure, mbar
     'T'             DAQ.T;...    %Temperature, K
     'RH'            DAQ.RH;...    %Relative Humidity, percent    
     'kdil'          kdil;...    %dilution, /s
+%     'tgauss'        316; %alternative Gaussian dilution initial timescale
     'SZA'           DAQ.SZA;... %solar zenith angle
     'J4'            DAQ.JNO2;... %NO2 photolysis frequency
 %     'jcorr'         'J4';... %correction factor. Muller did not use this.
     };
 
-clear dCOdt COmid kdil
+clear dCOdt COmid kdil tgauss
 
 %% CHEMICAL CONCENTRATIONS
 %{
