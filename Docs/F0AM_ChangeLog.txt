@@ -1,0 +1,264 @@
+
+This document provides a summary of changes made to Model code.
+Questions? --> Glenn Wolfe, gwolfe@umbc.edu or glenn.m.wolfe@nasa.gov
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20160822
+
+Changes following description paper reviews.
+
+ - Removed use of nanmean from InitializeChemistry.m and nanmedian from F0AM_ModelCore.m
+
+ - CB6r2: scaling for ISPD photolysis changed from 0.0036 to 0.0036/0.0065 (bug)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20160517
+
+FOAMv3.1: Bug fixes following public release of F0AMv3
+
+Code Changes:
+ - F0AM_ModelCore: Added columnization of O3col and albedo.
+                   Default albedo changed from 0.2 to 0.1.
+ - J_Hybrid: Added line to force SZA upper limit of 90 degrees
+ - J functions for CB05, CB6r2, RACM2, GSCHM: added vectorization of 
+   fixed altitude (0.5km), O3column (350DU) and albedo (0.01) for MCM option
+ - Check4NanNeg: tweaked "any" statements to operate on multi-dimension matrices
+ - Added Lagrangian Plume example.
+ - Removed IndexNOy tool. SearchSMILES is far superior.
+
+Chemistry Changes:
+ - Cross_Section_Cl2: fixed minor issue in T-parameterization and spreadsheet.
+ - CB05_K and CB6r2_K: documentation had an error in termolecular rate constants exponent
+    (-2 where it should be 2). Fixed it.
+ - RACM-2 reaction file streamlined by combining all like reactions (Thanks to SJR).
+ - CB6r2 mechanism updated to reflect most recent CAMx implementation. Notes from MRM:
+    "I used CAMx v6.1 when I originally wrote CB6r2, but now there’s a CAMx v6.3. Most of the 
+    changes relate to NTR chemistry. In the Yarwood documentation for CB6r2, NTR is split into 
+    NTR1 and NTR2, but this wasn’t incorporated into the CAMx mechanism until after the release 
+    of v6.1, which just uses NTR. Otherwise, the ISPD+OH reaction (R158) was modified to form 
+    new products with new product fractions. And HPALD photolysis was changed to remove HO2 as a 
+    product. These two changes are NOT consistent with the Yarwood docs, but I’ve included them 
+    to stay consistent with CAMx."
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20150601
+
+Began work on F0AMv3. Major changes from UWCM v2.2 listed below.
+There are a lot of changes, and this document lists most but probably not all.
+See individual scripts and readme for more details.
+
+Inputs
+    Met
+        Now includes optional input "LightFlux" to specify a light spectrum (actinic flux) for calculation of J-values
+          (e.g. when simulating a chamber experiment).
+        Added "ALT" input (altitude, m) to support hybrid J-value calculation method.
+
+    ChemFiles
+        Input has been modified to facilitate using differnt mechanisms. Now, the first two cells
+          must contain names of functions for generic rate constants (K) and photolysis frequencies
+          (J), respectively. For more info, see examples and ReadMe.
+
+    SolarCycle
+        Removed "UTCoffset" input from SolarCycle timestamp. All input times are assumed to be UTC.
+        Replaced "updateTime" input with "nDays". Now the user specifies the total # of days to run the solar cycle,
+          and the SZA update time is set to ModelOptions.IntTime.
+		
+	ModelOptions
+        "Verbose" behavior modified. Now gives three tiers of detail depending on input value (0,1,2,3).
+        "ChamberLights" input removed. The Met input "LightFlux" now fulfills this role.
+        "FixNOx" option added for semi-constraining total NOx.
+
+ModelCore
+    Add error check for existence of scripts/functions specified in ChemFiles input.
+    Add a line to force ModelOptions.TimeStamp to be a column vector.
+    Modify H2O/RH check to throw a warning if both are present (H2O takes priority).
+    Add code to accomodate LFlux input in Met.
+    Changed variable names:
+        "conc_init_now" to "conc_init_step"
+        "conc_run" to "conc_out"
+        "tmodel_run" to "time_out"
+        "tmodel_solar_end" to "time_solar_end"
+    Modifications to SolarCycle inputs and behavior:
+        Input "SolarParm.updateTime" removed. This is now set to the value of ModelOptions.IntTime.
+        Input "SolarParam.nDays" added. This specifies # of days to integrate over.
+        Solar cycle now begins and ends at the time of the measurement (before it ended the hour prior).
+          So, a 1-day run with IntTime of 3600s will have 25 mini-steps.
+ 
+Chem
+    New mechanisms are available. The current list includes MCM, CB05, CB6r2, RACM2 and GEOS-CHEM
+	All J, K functions: changed output from name/value pairs to structure,
+                        changed input to Met structure.
+                        Added "Jmethod" input to all J functions, to allow choice of J calculation
+                            (MCM, BOTTOMUP or HYBRID). See ReadMe for more info.
+
+Subs
+    breakout
+        clean up comments.
+
+    CheckStructure
+        Clean up comments and add an "ignorePrefix" optional input to allow passing of certain fields, such as J-value inputs in Met structure.
+
+    Check4NaNNeg
+        Add optional input to allow for checking for one or both conditions.
+        Now it can be used with solar cycle inputs (which may have negative lat/lon).
+
+    InitializeChemistry
+        Deleted line converting P from mbar to Torr.
+        Modify to accept new ChemFiles inputs, thereby accomodating different mechanisms (see above).
+        Added code to check for duplicate reactions (based on Rnames).
+        Major modifications to scaling of photolysis frequencies:
+            Functionality to calculate scaling factors for all input J-values
+            Propogation of this scaling for Solar Cycle calculations (through variable "jcorr_all")
+            Ability to compute generic jcorr (for non-measured J's) using an average of several measured J-values.
+
+    MCMreadnwrite
+        Rename to "FAC2F0AM," as its job is to convert FACSIMILE files to F0AM code.
+        Remove "fast reaction" code for short-circuiting of reactions with short-lived products.
+        Add code to append "+ hv" and "+ RO2" to reactions involving photolysis or RO2.
+        Disentangle code for string-building and file-writing.
+
+    Jday2datevec
+        New function to facillitate conversion of timestamps from julian day-of-year
+          to 6-column date vectors used in SolarCycle.
+
+    GenFilePath
+        Changed default save directory from current directory to UWCMv3\Runs subfolder.
+
+    ParsePairs
+        New function to parse name-value parameter inputs for functions.
+        Mainly used with plotting routines.
+
+Tools
+    SplitRun
+        Added option to specify a "custom" index for splitting results.
+            Useful, for example, for splitting up an aircraft campaign simulation by flight #.
+    Lifetime
+        New function to calculate total chemical lifetime for a species.
+
+Plots
+    ALL plotting function now use name-value pairs for optional inputs.
+    See documentation for each plot for available options.
+
+    purtyPlot
+        New m-file to change plot style (fonts, line width, etc.).
+
+    PlotConc
+        Changed unit input option to name-value pair
+        Added scale factor input option
+
+    PlotConcGroup
+        Added name-value pair options for unit, scale and plot type.
+        Added optional outputs for plotted species (ranked by concentration).
+
+    PlotRates
+        Added name-value pair options for unit, scale, plot type and Equilibrium-equation summming.
+
+    PlotRatesROPA
+        Removed from service. Use PlotRatesAvg instead.
+
+    PlotRatesAvg
+        New function to plot averaged rates for some or all of a model simulation.
+
+    PlotReactivity
+        Added name-value pair options, tweaked code to deal with 0 concentration of main reactant.
+        
+    PlotAllFields
+        Removed from service; no practical uses.
+                    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20150409
+
+Modified how EndPointsOnly flag influences output from a SolarCycle run.
+Now, setting EndPointsOnly=0 when executing a solar cycle simulation will cause
+model to output concentrations and rates for each "mini-step" along the solar cycles, 
+as determined by the SolarCycle parameter "updateTime."
+
+Also, the SZA used in the solar cycle run will be stored as a new parameter, SolarParam.SZAcycle.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20140421
+
+ - J. Kaiser noted that the rate constant for OH + CO in the InorganicRxns script reads
+
+    k(:,i) = 1.3e-13.*KMT05;
+
+    which is incorrect. The factor of 1.3e-13 is a mistake from MCMv3.1. It should just be KMT05. 
+    I have corrected this in both InorganicRxns_MCM32.m and InorganicRxns_MCM32_Explicit.m
+
+ - Also updated rated constants for HO2 + NO and HO2NO2 + OH
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20131126
+
+ - Moved Equilibrium-filtering code from PlotRates to ExtractRates.
+   The latter now accepts an additional input to allow combining of equilibrium reactions
+   (e.g. for PAN <--> CH3CO3 + NO2).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20131111
+
+ - Added ability to run model in a "Solar Cycle" mode.
+   In this case, the model will execute each step with a time-varying SZA to simulate a day.
+   Several additional parameters must be specified in a separate input structure called "SolarParam."
+   More info on this will be added to the readme.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20131022
+
+ - Initiated work on v2.2.
+
+ - Default units for pressure are now mbar/hPa.
+
+ - Added submechanisms:
+    - InorganicRxns_MCM32_Explicit: explicitly treats O(3P) and O(1D). Also now includes sulfur chemistry.
+    - CH4_O1D: methane + O(1D)
+
+ - Added functions:
+    - GenFilePath: deals with file path generation (e.g. dated folders)
+    - ScaleJ: calculates jcorr by scaling modeled J-values to observations
+    - Check4NanNeg: checks input structures for nan and negative values.
+
+ - InitializeChemistry modified to accomodate Met input as structure and Met.P in mbar
+
+ - SplitRun modified for IntTime in ModelOptions
+
+ - UWCM_ModelCore changes:
+    - Met, InitConc and BkgdConc converted to structures at beginning of script
+    - IntTime now included inside ModelOptions structure and can only be specified as a scalar.
+    - Moved jcorr calculation code to ScaleJ.m
+    - Moved most of the file generation code to GenFilePath.m
+    - Default save path is now current directory
+    - Added cell-based CheckStucture for ModelOptions (from CAFE v2.1)
+    - Added variable checking for Met
+    - Moved input nan/negative checking to a function
+
+ - Updated examples for compatability with other changes
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20131001
+
+ - Bug identified in ISOPO2IsomerizationRxns.m. 1,6 isomerizations should occur for ISOPAO2
+   and ISOPCO2, not ISOPBO2 and ISOPDO2. Fixed it.
+
+ - New function, SearchSMILES.m, contained in UWCMtools/SMILES. This function allows indexing of MCM species with specific functional groups (e.g. carbonyls, alcohols, etc.).
+   Not rigorously tested, so use with caution.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20121028
+
+UWCM v2.1 released!
+
