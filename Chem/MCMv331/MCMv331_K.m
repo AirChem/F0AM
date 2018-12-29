@@ -9,7 +9,7 @@ function K = MCMv331_K(Met)
 %   H2O: water concentration in molec/cm3
 %
 % OUTPUTS:
-% K: structure of rate constants. Each is size length(T) x # of rate constants
+% K: structure of rate constants. Each is size length(T) x 1
 %
 % 20080916 GMW
 % 20110521 GMW  Updated from 3.1 to 3.2
@@ -17,7 +17,7 @@ function K = MCMv331_K(Met)
 %               Fixed MCM typo in parameterization for KBPPN (FCPPN-->FPPN in last line)
 % 20150616 JBK  Updated to MCMv3.3.1
 % 20160304 GMW  Changed output from name/value pair to structure, and input to structure.
-% 20160321 GMW  Fixed some hold-overs from MCMv3.2 (updated to match documentatio now).
+% 20160321 GMW  Fixed some hold-overs from MCMv3.2 (updated to match documentation now).
 
 struct2var(Met)
 

@@ -4,6 +4,7 @@ function S = Check4NanNeg(S,pickOne)
 % If any are found, it returns an error.
 % optional input "pickOne" can be set to 'nan' or 'neg' to only check for one of these.
 % Also forces all non-character fields in the structure to be column vectors.
+%
 % 20131022 GMW
 % 20150602 GMW  added optional input "pickOne".
 % 20151015 GMW  Modified to skip cell array inputs

@@ -923,11 +923,11 @@ fISPD(i)=fISPD(i)-1; fO3(i)=fO3(i)-1; fC2O3(i)=0.114; fFORM(i)=0.15; fMGLY(i)=0.
 fHO2(i)=0.154; fOH(i)=0.268; fXO2(i)=0.064; fALD2(i)=0.02; fPAR(i)=0.36; fCO(i)=0.225;
 
 i=i+1; %R147
-Rnames{i} = 'ISPD + NO3 = 0.357ALDX + 0.282FORM + 1.282PAR + 0.925HO2 + 0.643CO + 0.85NTR + 0.05CXO3 + 0.075XO2 + 0.15HNO3';
+Rnames{i} = 'ISPD + NO3 = 0.357ALDX + 0.282FORM + 1.282PAR + 0.925HO2 + 0.643CO + 0.85NTR + 0.075CXO3 + 0.075XO2 + 0.15HNO3';
 k(:,i) = 1.0e-15;
 Gstr{i,1} = 'ISPD'; Gstr{i,2} = 'NO3'; 
 fISPD(i)=fISPD(i)-1; fNO3(i)=fNO3(i)-1; fALDX(i)=0.357; fFORM(i)=0.282; fPAR(i)=1.282; 
-fHO2(i)=0.925; fCO(i)=0.643; fNTR(i)=0.85; fCXO3(i)=0.05; fXO2(i)=0.075; fHNO3(i)=0.15;
+fHO2(i)=0.925; fCO(i)=0.643; fNTR(i)=0.85; fCXO3(i)=0.075; fXO2(i)=0.075; fHNO3(i)=0.15; %CX03 fraction increased from 0.05 to 0.075 (typo), 20170327 GMW
 
 i=i+1; %R148
 Rnames{i} = 'ISPD = 0.333CO + 0.067ALD2 + 0.9FORM + 0.832PAR + 1.033HO2 + 0.7XO2 + O.967C2O3';

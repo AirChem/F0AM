@@ -4,12 +4,12 @@ function dydt = dydt_eval(t,conc,param)
 % Note that, below, nSp = # of species, nRx = # of reactions, nZ = # of boxes.
 %
 % INPUTS:
-% t: current integration time
+% t: current integration time, s
 % conc: matrix of species concentrations in molec/cm3, dim = nZ x nSp
 % param: a cell array containing the following parameters:
 %   k: matrix of rate constants for reaction/photolysis/deposition/emission, dim = nZ x nRx
 %   f: SPARSE matrix of species coefficients for each reaction, dim = nRx x nSp
-%   iG: index for species to be multiple for each reaction. dim = nRx x 2.
+%   iG: index for species to be multiplied for each reaction. dim = nRx x 2.
 %   iRO2: index to identify RO2 species
 %   kdil: dilution rate constant (/s). If this is 0, dilution is ignored.
 %   conc_bkgd: background concentrations, used for dilution
@@ -21,7 +21,8 @@ function dydt = dydt_eval(t,conc,param)
 % dydt: matrix of rate of change of species, dim = nZ x nSp
 %
 % 20080918 GMW
-% 20120212 GMW Modified for use with UWCM_v2. See ChangeLog for details.
+% 20120212 GMW  Modified for use with UWCM_v2. See ChangeLog for details.
+% 20180320 GMW  Added Gaussian dispersion option.
 
 %%%%%BREAKOUT PARAMETERS%%%%%
 k = param{1};
@@ -30,10 +31,12 @@ iG = param{3};
 iRO2 = param{4};
 iHold = param{5};
 kdil = param{6};
-conc_bkgd = param{7};
-IntTime = param{8};
-Verbose = param{9};
-NOxinfo = param{10};
+tgauss = param{7};
+conc_bkgd = param{8};
+IntTime = param{9};
+Verbose = param{10};
+% NOxinfo = param{11};
+NOxinfo = [];
 
 conc = conc'; %ODE solver feeds this in as 1 row for each species
 
@@ -52,7 +55,11 @@ rates = k.*G; %chemical rates
 dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
 
 %dilution
-dilrate = -kdil.*(conc - conc_bkgd); %dilution rate
+if ~isinf(tgauss)
+    dilrate = -1./(tgauss + 2*t).*(conc - conc_bkgd); % gaussian dispersion
+else
+    dilrate = -kdil.*(conc - conc_bkgd); % 1st-order dilution
+end
 dydt = dydt + dilrate;
 
 % experimental code to fix total NOx

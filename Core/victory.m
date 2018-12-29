@@ -8,5 +8,10 @@ disp(' \  /   |  |        |    |   |  |__/   |   |')
 disp('  \/    |  -----    |    -----  |  \   |   .')
 disp('*******************************************')
 
-[soundwav,soundFreq] = wavread('ffVII_victory.wav');
+try
+    [soundwav,soundFreq] = audioread('ffVII_victory.wav'); %new matlab
+catch
+    [soundwav,soundFreq] = wavread('ffVII_victory.wav'); %old matlab
+end
+
 sound(soundwav,soundFreq)

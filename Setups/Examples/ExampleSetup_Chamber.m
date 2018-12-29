@@ -80,7 +80,8 @@ BkgdConc = {...
 "LinkSteps" is set to 0 because each step is fully independent.
 "Repeat" is set to 1 because we only want to go through each step once.
 "IntTime" is the integration time for each step. Let's pretend each experiment lasts 3 hours.
-"SavePath" is commented out, so output will be saved in a dated folder in the \Runs\ folder.
+"SavePath" will store the output in the default "Runs" folder under the base F0AM directory
+"GoParallel" can be utilized since each step is independent (assuming you have the parallel computing toolbox)
 %}
 
 ModelOptions.Verbose       = 1;
@@ -89,6 +90,7 @@ ModelOptions.LinkSteps     = 0;
 ModelOptions.Repeat        = 1;
 ModelOptions.IntTime       = 3*3600;
 ModelOptions.SavePath      = 'ChamberExampleOutput.mat';
+ModelOptions.GoParallel    = 0;
 
 %% MODEL RUN
 % Now we call the model.

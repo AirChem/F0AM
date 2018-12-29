@@ -4,13 +4,58 @@ Questions? --> Glenn Wolfe, gwolfe@umbc.edu or glenn.m.wolfe@nasa.gov
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-20160822
+20160901 TO 20180320
 
-Changes following description paper reviews.
+F0AMv3.2
 
- - Removed use of nanmean from InitializeChemistry.m and nanmedian from F0AM_ModelCore.m
+F0AM_ModelCore: 
+    NEW ModelOption.GoParallel: allows parallelizd execution of independent model steps on multiple processors/cores.
+        See documentation for more info. Example Setups "Chamber" and "FlightSS" can demonstrate use of this option.
+        Required substantial revisions to the ODE solver section.
+    
+    NEW Gaussian dispersion option: alternative to simple 1st-order dilution; may be more appropriate for Lagrangian plume modeling in some cases.
+        Requires new Met input "tgauss." See readme Sect. 6.2 and ExampleSetup_LagrangianPlume for more info.
 
- - CB6r2: scaling for ISPD photolysis changed from 0.0036 to 0.0036/0.0065 (bug)
+    Assign Defaults and Check Inputs Section:
+        Added checks for incompatible model options
+        Moved Met initialization cell array to a sub-function, IntializeMet.m
+        Added Met inputs: BLH (boundary layer height), PPFD (photosynthetic photon flux density), LAI (leaf area index) for emis/dep
+        Added numerous met inputs for particles
+        Removed default value for RH. Now water (either H2O or RH) is a required input.
+        Removed Met initialization "force vertical arrays", as this is done in the "Check4NanNeg" function farther down.
+
+    SolarCycle: removed the initial step at initial conditions, so now output will have 24 points instead of 25.
+
+    Saving: Changed from saving all variables in the function workspace to a defined list
+
+    Throughout: Removed "clear" commands
+
+Chemistry
+    CB6r2 mechanism: scaling for ISPD photolysis changed from 0.0036 to 0.0036/0.0065 (bug)
+
+    CB05_AllRxns.m: Reaction 147, CX03 fraction increased from 0.05 to 0.075 (typo)
+
+    Aerosol folder:
+        Deleted function k_mass_transfer_A (it's just a single equation, now in ExampleAerosolRxn.m)
+
+
+Removed use of nanmean from InitializeChemistry.m and nanmedian from F0AM_ModelCore.m
+
+New functions/scripts
+    InitializeMet.m: contains cell array of valid met fields and their default values.
+        Separated this from F0AM_ModelCore to allow users more flexibility without need to modify core. 
+
+    struct2parvar.m, parvar2struct.m: facilitate passing of variables into a parfor loop
+
+    IntegrateStep.m: contains all code for executing ODE integration.
+
+	HO2NO2_hv.m: new MCM reaction script for pernitric acid photolysis.
+
+    HOx_HetChem: new reaction script for example OH/HO2 + aerosol reactions, in Chem/Aerosol folder.
+    k_massTransfer: helper function for above script.
+
+    \Chem\Emission and \Chem\Deposition: new folders containing some very crude examples for emission and deposition reactions.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

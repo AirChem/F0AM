@@ -63,8 +63,8 @@ InitConc = {...
     
     %Inorganics
     'H2'                550                  1;
-    'O3'                SOAS.O3              0;
-    'OH'                SOAS.OH              1;
+    'O3'                SOAS.O3              1;
+    'OH'                SOAS.OH              0;
     'CO'                SOAS.CO              1;
     'H2O2'              SOAS.H2O2            1;
     
@@ -130,6 +130,7 @@ ChemFiles = {...
    'MCMv331_K(Met)';
    'MCMv331_J(Met,0)'; %Jmethod flag of 0 specifies default MCM parameterization
    'MCMv331_DielExampleChemistry';
+%     'MCMv331_Inorg_Isoprene'
    };
 
 %% DILUTION CONCENTRATIONS
