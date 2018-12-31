@@ -12,7 +12,7 @@ F0AM is a MATLAB program for simulating atmospheric chemistry systems. It is use
 
 If F0AM is used to support a scientific publication, please cite the following reference:
 
-*G. M. Wolfe, M. R. Marvin, S. J. Roberts, K. R. Travis, and J. Liao, The Framework for 0-D Atmospheric Modeling (F0AM) v3.1, Geoscientific Model Development, 9, 3309-3319, doi: 10.5194/gmd-9-3309-2016, 2016.*
+>*G. M. Wolfe, M. R. Marvin, S. J. Roberts, K. R. Travis, and J. Liao, The Framework for 0-D Atmospheric Modeling (F0AM) v3.1, Geoscientific Model Development, 9, 3309-3319, doi: 10.5194/gmd-9-3309-2016, 2016.*
 
 In addition, we ask that you send an email to Glenn so that the paper may be added to our [List of Publications Using F0AM](https://docs.google.com/spreadsheets/d/1fd7mWTzMiWuuqRG9eI9g0iYyt7DymLIVpDv_rArt5Z8/edit#gid=0).
 
