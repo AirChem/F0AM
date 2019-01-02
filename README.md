@@ -4,7 +4,7 @@ Framework for 0-D Atmospheric Modeling
 
 Most recent public release: [**v3.2**](https://github.com/AirChem/F0AM/releases/latest)
 
-Contact: F0AM.model@gmail.com
+Contact: F0AM.model at gmail.com
 
 Discussion Forum/Email List: https://groups.google.com/forum/#!forum/f0amusers
 
