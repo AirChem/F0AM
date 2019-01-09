@@ -35,6 +35,7 @@ tgauss = param{7};
 conc_bkgd = param{8};
 IntTime = param{9};
 Verbose = param{10};
+limited_r = param{11};
 % NOxinfo = param{11};
 NOxinfo = [];
 
@@ -51,6 +52,11 @@ end
 %%%%%CALCULATE RATES%%%%%
 conc(:,2) = sum(conc(:,iRO2),2); %calculate sum of RO2 species
 G = conc(:,iG(:,1)).*conc(:,iG(:,2)); %1 column for each reaction
+%%%%%Modififcation for some limiting reactants
+% PSR 190109
+I = min(conc(:,iG(limited_r,1)),conc(:,iG(limited_r,2)));
+G(:,limited_r) = I;
+%End limiting reactant section
 rates = k.*G; %chemical rates
 dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
 

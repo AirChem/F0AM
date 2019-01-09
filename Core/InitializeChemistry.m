@@ -1,4 +1,4 @@
-function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,firstCall)
+function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,limited_r] = InitializeChemistry(Met,ChemFiles,ModelOptions,firstCall)
 % function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,FirstCall)
 % Generates parameters for calculating time rate of change of chemical species
 % using the dydt_eval function.
@@ -131,7 +131,13 @@ k = k(:,1:i);
 
 Gstr = Gstr(1:i,:);
 iempty = cellfun('isempty',Gstr);
-Gstr(iempty) = {'ONE'}; %replace empty cells with name of "ONE" species (all 1's)
+Gstr(iempty) = {'ONE'}; %replace empty cells with name of "ONE" species (all 1's)\
+%%%%% Add in code to deal with limiting reactants
+% PSR 190109
+[r, c] = find(~cellfun(@isempty,strfind(Gstr,'limiting')));
+Gstr = strrep(Gstr,'limiting_','');
+limited_r = unique(r);
+%%%%%% End of PSR additions
 [~,iG] = ismember(Gstr,Cnames); %generate index, iG, for reactant locations
 
 if sum(iC)>nSp, disp('CAUTION: Number of species under-guessed. Consider revising InitializeChemistry.m.'); end

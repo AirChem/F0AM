@@ -221,7 +221,7 @@ elseif isempty(Met.RH)
     Met.RH = ConvertHumidity(Met.T,Met.P,Met.H2O,'NumberDensity','RH');
 end
 
-[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all] = InitializeChemistry(Met,Chem.ChemFiles,ModelOptions,1);
+[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all,limited_r] = InitializeChemistry(Met,Chem.ChemFiles,ModelOptions,1);
 
 % lengths
 nRx = length(Chem.Rnames);  %number of reactions
@@ -300,7 +300,7 @@ for j = 1:ModelOptions.Repeat
         % parallel for-loop
         parfor i = 1:nIc
             [Conc{i,j},Time{i,j},StepIndex{i,j},RepIndex{i,j},k_solar{i,j},SZA_solar{i,j}] = ...
-                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:));
+                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:),limited_r);
         end
         
     else
@@ -308,7 +308,7 @@ for j = 1:ModelOptions.Repeat
         % serial for-loop
         for i = 1:nIc
             [Conc{i,j},Time{i,j},StepIndex{i,j},RepIndex{i,j},k_solar{i,j},SZA_solar{i,j}] = ...
-                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:));
+                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:),limited_r);
             
             if ModelOptions.LinkSteps, conc_last = Conc{i,j}(end,:); end
         end

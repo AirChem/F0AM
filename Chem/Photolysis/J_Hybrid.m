@@ -32,7 +32,8 @@ function J = J_Hybrid(SZA,ALT,O3col,albedo)
 
 SZA(SZA>90)=90;
 
-load HybridJvalues.mat %structure Jhybrid, matrices SZAhybrid, ALThybrid, O3Chybrid, ALBhybrid
+load HybridJvalues_Extended.mat %structure Jhybrid, matrices SZAhybrid, ALThybrid, O3Chybrid, ALBhybrid
+%Extended version made by Extend_HybridJ.m
 
 J = struct;
 Jnames = fieldnames(Jhybrid);

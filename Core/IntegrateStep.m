@@ -1,5 +1,5 @@
 function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
-    IntegrateStep(i,j,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
+    IntegrateStep(i,j,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice,limited_r)
 % function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
 %     IntegrateStep(i,j,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
 % Performs integration of chemical ODEs for a single set of inputs/constraints.
@@ -17,6 +17,8 @@ function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
 %   Sslice:         SolarParam sliced variable 1-D array
 %   Mbroad:         Met broadcast variable structure
 %   Mslice:         Met sliced variable 1-D array
+%   limited_r:      A list of the reactions that require calculation of the
+%                       limiting reactant
 %
 % OUTPUTS (size depends on ModelOptions)
 %   Conc:       matrix of calculated concentrations
@@ -118,6 +120,7 @@ for h = 1:nSolar
         conc_bkgd,...
         ModelOptions.IntTime,...
         ModelOptions.Verbose,...
+        limited_r
         };
     
     options = odeset('Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param)); %Jacobian speeds integration
