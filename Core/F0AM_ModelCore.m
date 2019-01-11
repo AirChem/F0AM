@@ -36,6 +36,9 @@ FieldInfo = {...
     'FixNOx'            0               0   ;...
     'DeclareVictory'    0               0   ;...
     'GoParallel'        0               0   ;...
+    'ClassComposition'  0               struct();...%Added 190111 by PSRP
+    'FixedClasses'      0               {}  ;...%Added 190111 by PSRP
+    'DilutionClasses'   0               {}  ;...%Added 190111 by PSRP
     };
 ModelOptions = CheckStructure(ModelOptions,FieldInfo);
 
@@ -65,6 +68,14 @@ if ModelOptions.GoParallel
         parpool(pID,pID.NumWorkers);
     end
 end
+
+%Clean up ClassComposition, FixedClasses, DilutionClasses:
+fn = fieldnames(ModelOptions.ClassComposition);
+combined_class_names = [ModelOptions.FixedClasses, ModelOptions.DilutionClasses]
+for i = 1:length(fn)
+    curr_classname = fn{i};
+end
+
 
 %%%%% METEOROLOGY %%%%%
 
@@ -249,6 +260,32 @@ if ModelOptions.FixNOx
     [~,Chem.iNOx] = ismember({'NO','NO2'},Cnames); %get indices for NO and NO2
 %     Chem.NOxinfo = [iNOx; conc_init(1,iNOx)]; %for adjustments in dydt_eval
 end
+
+% %Expanding FixNOx to FixedClasses
+% matrix_fixed_classes = zeros(numel(ModelOptions.FixedClasses),nSp);
+% matrix_adjust_as = zeros(numel(ModelOptions.FixedClasses),nSp);
+% for ind = 1:numel(ModelOptions.FixedClasses)
+%     curr_class_name = ModelOptions.FixedClasses{ind};
+%     istring = LocateString(ModelOptions.ClassComposition(:,1),curr_class_name);
+%     curr_class = ModelOptions.ClassComposition{istring,2};
+%     for spInd = 1:numel(curr_class)
+%         [~,iClass] = ismember(curr_class{spInd},Cnames);
+%         matrix_fixed_classes(ind,iClass) = matrix_fixed_classes(ind,iClass) + 1;
+%     end
+%     curr_adj_as = ModelOptions.ClassComposition{istring,3};
+%     for spInd = 1:numel(curr_adj_as)
+%         [~,iClass] = ismember(curr_adj_as{spInd},Cnames);
+%         matrix_adjust_as(ind,iClass) = matrix_adjust_as(ind,iClass) + 1;
+%     end
+% end
+% 
+% %Check for non-overlapping adjust-as-es
+% q = matrix_adjust_as;
+% q(matrix_adjust_as >= 1) = 1;
+% if max(sum(q,1)) > 1
+%     error('Can''t have overlapping fixed_classes adjustments');
+% end
+% a = 17;
 
 %%   INITIALIZE BACKGROUND CONCENTRATIONS (DILUTION)
 

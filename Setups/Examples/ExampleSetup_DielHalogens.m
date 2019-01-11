@@ -171,6 +171,60 @@ ModelOptions.TimeStamp      = SOAS.Time;
 ModelOptions.SavePath       = 'DoNotSave';
 ModelOptions.FixNOx         = 1;
 
+
+%%
+%Fixed classes:
+ClassComposition = struct();
+ClassComposition.BrY = {...
+     % Species Name     Stoichiometry       Adjust Weighting
+     'BrO'                  1                       1;
+     'Br'                   1                       1;
+     'HBr'                  1                       1;
+     'BrNO2'                1                       1;
+     'BrNO3'                1                       1;
+     'HOBr'                 1                       1;
+     'Br2'                  2                       2;
+     'BrCl'                 1                       0;
+     'IBr'                  1                       0;
+     };
+ClassComposition.IY  = {...
+    % Species Name     Stoichiometry       Adjust Weighting
+    'I'                     1                       1;
+    'IO'                    1                       1;
+    'HI'                    1                       1;
+    'HOI'                   1                       1;
+    'OIO'                   1                       1;
+    'CH3I'                  1                       1;
+    'INO'                   1                       1;
+    'INO2'                  1                       1;
+    'INO3'                  1                       1;
+    'I2'                    2                       2;
+    'I2O4'                  2                       2;
+    'I2O3'                  2                       2;
+    'IBr'                   1                       0;
+    'ICl'                   1                       0;
+    };
+ClassComposition.ClY = {...
+    'ClO'                   1                       1;
+    'OClO'                  1                       1;
+    'Cl'                    1                       1;
+    'HCl'                   1                       1;
+    'ClNO3'                 1                       1;
+    'ClOO'                  1                       1;
+    'HOCl'                  1                       1;
+    'ClNO2'                 1                       1;
+    'CL2'                   2                       2;
+    'Cl2O2'                 2                       2;
+    'BrCl'                  1                       0;
+    'ICl'                   1                       0;
+    };
+
+% fn = fieldnames(ModelOptions.ClassComposition);
+ModelOptions.ClassComposition = ClassComposition;
+ModelOptions.FixedClasses = {'BrY','IY','ClY'};
+ModelOptions.DilutionClasses = {'NOx'};
+
+
 %% MODEL RUN
 % Now we call the model. Note this may take several minutes to run, depending on your system.
 % Output will be saved in the "SavePath" above and will also be written to the structure S.
