@@ -68,15 +68,29 @@ if ModelOptions.GoParallel
         parpool(pID,pID.NumWorkers);
     end
 end
-
+%%
 %Clean up ClassComposition, FixedClasses, DilutionClasses:
-fn = fieldnames(ModelOptions.ClassComposition);
-combined_class_names = [ModelOptions.FixedClasses, ModelOptions.DilutionClasses]
-for i = 1:length(fn)
-    curr_classname = fn{i};
+class_names = fieldnames(ModelOptions.ClassComposition);
+fixed_and_dilution_names = [ModelOptions.FixedClasses, ModelOptions.DilutionClasses]
+num_instances = cellfun(@(x) sum(count(fixed_and_dilution_names,x)), class_names);
+if any(num_instances == 0)
+    unused_classes = class_names(num_instances==0);
+    t = 'The following classes are included in ClassComposition, but are not referenced in FixedClasses or DilutionClasses: ';
+    warning([t, char(join(unused_classes(:),','))]);
+    ModelOptions.ClassComposition = rmfield(ModelOptions.ClassComposition,unused_classes);    
 end
-
-
+if any(num_instances > 1)
+    repeated_classes = class_names(num_instances > 1);
+    t = 'The following classes are referenced in FixedClasses or DilutionClasses multiple times: ';
+    error([t, char(join(repeated_classes(:),','))]);
+end
+reverse_instances = cellfun(@(x) sum(count(class_names,x)), fixed_and_dilution_names);
+if any(reverse_instances == 0)
+    unused_classes = fixed_and_dilution_names(reverse_instances==0);
+    t = 'The following classes are not specified in ClassComposition: ';
+    error([t, char(join(unused_classes(:),','))]);
+end
+%%
 %%%%% METEOROLOGY %%%%%
 
 % special water check
@@ -261,31 +275,6 @@ if ModelOptions.FixNOx
 %     Chem.NOxinfo = [iNOx; conc_init(1,iNOx)]; %for adjustments in dydt_eval
 end
 
-% %Expanding FixNOx to FixedClasses
-% matrix_fixed_classes = zeros(numel(ModelOptions.FixedClasses),nSp);
-% matrix_adjust_as = zeros(numel(ModelOptions.FixedClasses),nSp);
-% for ind = 1:numel(ModelOptions.FixedClasses)
-%     curr_class_name = ModelOptions.FixedClasses{ind};
-%     istring = LocateString(ModelOptions.ClassComposition(:,1),curr_class_name);
-%     curr_class = ModelOptions.ClassComposition{istring,2};
-%     for spInd = 1:numel(curr_class)
-%         [~,iClass] = ismember(curr_class{spInd},Cnames);
-%         matrix_fixed_classes(ind,iClass) = matrix_fixed_classes(ind,iClass) + 1;
-%     end
-%     curr_adj_as = ModelOptions.ClassComposition{istring,3};
-%     for spInd = 1:numel(curr_adj_as)
-%         [~,iClass] = ismember(curr_adj_as{spInd},Cnames);
-%         matrix_adjust_as(ind,iClass) = matrix_adjust_as(ind,iClass) + 1;
-%     end
-% end
-% 
-% %Check for non-overlapping adjust-as-es
-% q = matrix_adjust_as;
-% q(matrix_adjust_as >= 1) = 1;
-% if max(sum(q,1)) > 1
-%     error('Can''t have overlapping fixed_classes adjustments');
-% end
-% a = 17;
 
 %%   INITIALIZE BACKGROUND CONCENTRATIONS (DILUTION)
 
@@ -308,6 +297,87 @@ end
 
 conc_bkgd = conc_bkgd.*repmat(Met.M,1,nSp)./1e9; %convert from ppb to molec/cc
 conc_bkgd(:,1) = 1; %ONE is first species
+
+
+%% Initialize behavoir of fixed classes and dilution classes
+
+%Fixed classes:
+fixed_classes = zeros(length(ModelOptions.FixedClasses),nSp); 
+fixed_adjust_as = zeros(length(ModelOptions.FixedClasses),nSp); 
+fixed_class_conc = zeros(length(ModelOptions.FixedClasses),nIc);
+for ind = 1:length(ModelOptions.FixedClasses)
+    curr_class_name = ModelOptions.FixedClasses{ind};
+    curr_class_composition = ModelOptions.ClassComposition.(curr_class_name);
+    for spInd = 1:size(curr_class_composition,1)
+        [~,iClass] = ismember(curr_class_composition{spInd,1},Cnames);
+        if iClass == 0
+            disp(['CAUTION: Fixed Class Species ' curr_class_composition{spInd,1}  'not found in reaction list.'])
+            continue;
+        end
+        fixed_classes(ind,iClass) = curr_class_composition{spInd,2};
+        fixed_adjust_as(ind,iClass) = curr_class_composition{spInd,3};
+    end
+    fixed_class_conc(ind,:) = sum(repmat(fixed_classes(ind,:),nIc,1).*conc_init,2);
+end
+%Dilution classes
+dilution_classes = zeros(length(ModelOptions.DilutionClasses),nSp);
+dilution_adjust_as = zeros(length(ModelOptions.DilutionClasses),nSp);
+dilution_bkgd   = zeros(length(ModelOptions.DilutionClasses),nIc);
+for ind = 1:length(ModelOptions.DilutionClasses)
+    curr_class_name = ModelOptions.DilutionClasses{ind};
+    curr_class_composition = ModelOptions.ClassComposition.(curr_class_name);
+    for spInd = 1:size(curr_class_composition,1)
+        [~,iClass] = ismember(curr_class_composition{spInd,1},Cnames);
+        if iClass == 0
+            disp(['CAUTION: Dilution Class Species ' curr_class_composition{spInd,1}  'not found in reaction list.'])
+            continue;
+        end
+        dilution_classes(ind,iClass) = curr_class_composition{spInd,2};
+        dilution_adjust_as(ind,iClass) =curr_class_composition{spInd,3};
+    end
+    dilution_bkgd(ind,:) = sum(repmat(dilution_classes(ind,:),nIc,1).*conc_bkgd,2);
+end
+
+%Check for non-overlapping adjust-as-es
+all_adjust = [fixed_adjust_as; dilution_adjust_as];
+all_adjust = all_adjust > 0;
+if max(sum(all_adjust,1)) > 1
+    error('The same species appears in the adjustements to multiple fixed classes');
+end
+
+%We also need to check that no member of adjust_as appears in more than one
+%class, as this can seriously mess up the simulation from species being
+%pulled in multiple directions at once. 
+all_classes = [fixed_classes; dilution_classes];
+for classInd = 1:size(all_classes,1)
+    i = find(all_adjust(classInd,:));
+    other_classes = all_classes;
+    other_classes(classInd,:) = 0;
+    if any(any(other_classes(:,i)))
+        [~, c] = find(other_classes(:,i));
+        t = 'The following species appear in adjust_as for one class, but are part of another class:  ';
+        error([t, char(join(Cnames(i(c)),', '))]);
+    end
+end
+
+%Then, modify iHold to remove class species:
+[~, c] = find(all_classes);
+bad_holds = ismember(Chem.iHold,c);
+if any(bad_holds)
+    warning(['Over-riding holdme behavoir for the following species: ', char(join(Cnames(Chem.iHold(bad_holds))))])
+    Chem.iHold = Chem.iHold(~bad_holds);
+end
+
+
+%Attach all of these matrices to Chem to easily pass them into
+%IntegrateStep
+Chem.fixed_classes = fixed_classes;
+Chem.fixed_adjust_as = fixed_adjust_as;
+Chem.fixed_class_conc = fixed_class_conc;
+Chem.dilution_classes = dilution_classes;
+Chem.dilution_adjust_as = dilution_adjust_as;
+Chem.dilution_bkgd = dilution_bkgd;
+
 
 %%   INTEGRATION
 
@@ -376,6 +446,11 @@ end
 %Chemical rates
 Conc(:,2) = sum(Conc(:,Chem.iRO2),2);
 G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2));
+%Need to adjust G here as well to deal with limiting reactants in heterogeneous
+%chemsitry
+I = min(Conc(:,Chem.iG(limited_r,1)),Conc(:,Chem.iG(limited_r,2)));
+G(:,limited_r) = I;
+%End limiting reactants section. 
 Mbig = Met.M(StepIndex);
 if size(Chem.k,1)~= size(G,1) %not always so if EndPointsOnly=0
     kbig = Chem.k(StepIndex,:); %expand to size of G

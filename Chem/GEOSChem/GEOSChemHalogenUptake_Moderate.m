@@ -56,7 +56,7 @@ Rnames{i} = 'HOI + AerSA = 0.85*ICl + 0.15*IBr';
 k(:,i) = avg_speed(	143.89./1000).*gamma_HOI./4 .* AerSA_invm; %0.01 = gamma HOI
 Gstr{i,1} = 'HOI';
 fHOI(i) = -1; fI(i) = 1; %fICl(i) = 0.85; fIBr(i) = 0.15; %fHBr(i) = -0.15; fHCl(i) = -0.85;
-% 
+
 i = i + 1; %R11
 Rnames{i} = 'ClNO3 + HBr + AerSA = BrCl + HNO3';
 k(:,i) = avg_speed(97.0 /1000) .* gamma_ClNO3_HBr ./4 .* AerSA_invm; %gamma = 0.3 according to Sander et al(JPL 2011), Table 5-2 Note 102

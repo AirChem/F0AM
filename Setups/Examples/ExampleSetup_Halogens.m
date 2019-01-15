@@ -62,66 +62,18 @@ When many species are used, it helps to organize alphabetically or by functional
 IY_conc = (10 + sin([1:24]*pi/24)*10)/1000;
 
 InitConc = {...
-    % names           conc(ppb)           HoldMe
-    
-    %Inorganics
-    'H2'                550                  1;
-    'O3'                SOAS.O3              1;
-    'OH'                SOAS.OH              0;
-    'CO'                SOAS.CO              1;
-    'H2O2'              SOAS.H2O2            1;
-    
-    %NOy
-    'NO'                SOAS.NO              0; %FixNOx flag set in options
-    'NO2'               SOAS.NO2             0;
-    'PAN'               SOAS.PAN             1;
-    'C2H5NO3'           SOAS.C2H5NO3         1;
-    'IC3H7NO3'          SOAS.IC3H7NO3        1;
-    
-    %Biogenics
-    'C5H8'              SOAS.C5H8            1;
-    'APINENE'           SOAS.APINENE         1;
-    'BPINENE'           SOAS.BPINENE         1;
-    'LIMONENE'          SOAS.LIMONENE        1;
-    
-    %CxHy
-    'CH4'               1770                 1;
-    'C2H4'              SOAS.C2H4            1;
-    'C2H6'              SOAS.C2H6            1;
-    'C3H8'              SOAS.C3H8            1;
-    'IC4H10'            SOAS.IC4H10          1;
-    'IC5H12'            SOAS.IC5H12          1;
-    'NC5H12'            SOAS.NC5H12          1;
-    'NC6H14'            SOAS.NC6H14          1;
-    'NC10H22'           SOAS.NC10H22         1;
-    
-    %Aromatics
-    'BENZENE'           SOAS.BENZENE         1;
-    'TOLUENE'           SOAS.TOLUENE         1;
-    'EBENZ'             SOAS.EBENZ           1;
-    'TM124B'            SOAS.TM124B          1;
-    'TM135B'            SOAS.TM135B          1;
-    'MXYL'              SOAS.MXYL            1;
-    'OXYL'              SOAS.OXYL            1;
-    'PXYL'              SOAS.PXYL            1;
-    'BENZAL'            SOAS.BENZAL          1;
-    
-    %Oxygenates
-    'CH3CHO'            SOAS.CH3CHO          1;
-    'C2H5CHO'           SOAS.C2H5CHO         1;
-    'C3H7CHO'           SOAS.C3H7CHO         1;
-    'HOCH2CHO'          SOAS.HOCH2CHO        1;
-    'GLYOX'             SOAS.GLYOX           1;
-    'CH3OH'             SOAS.CH3OH           1;
-    'C2H5OH'            SOAS.C2H5OH          1;
-    'ACETOL'            SOAS.ACETOL          1;
-    'BIACET'            SOAS.BIACET          1;
-    'MACR'              SOAS.MACR            1;
-    'MVK'               SOAS.MVK             1;
-
+%   names       values      hold me
+    'O3'        50                                  1;...
+    'NO'        0.05                                1;...
+    'NO2'       0.3                                 1;...
+    ...
+    'HCHO'      2                                   1;...
+    'CH3OH'     4                                   1;... %Can get quite high concentrations of methanol
+    'CH3CHO'    3                                   1;...
+ 
     %Halogens
-    'HOBr'              7/1000               0;
-    'HOI'               IY_conc               0;
+    'HOBr'              7/1000               1;
+    'HOI'               IY_conc              0;
     'HCl'               14/1000              0;
     };
 
@@ -137,10 +89,9 @@ the specific set of initial species included above.
 ChemFiles = {...
    'MCMv331_K(Met)';
    'MCMv331_J(Met,2)'; %Jmethod flag of 0 specifies default MCM parameterization
-   'MCMv331_DielExampleChemistry';
+   'MCMv331_Inorg_Isoprene'
    'GEOSChemHalogenReactions';
    'GEOSChemHalogenUptake_Moderate';
-%     'MCMv331_Inorg_Isoprene'
    };
 
 %% DILUTION CONCENTRATIONS
@@ -149,7 +100,8 @@ Background concentrations, along with the value of kdil in Met, determine the di
 Here we stick with the default value of 0 for all species, which effectively makes dilution a first-order loss.
 %}
 BkgdConc = {'DEFAULT'       0;
-             'Cl'           IY_conc*3};
+             'Cl'           IY_conc*3;
+             'BrCl'        [2,2,2,2,2,2,2,4,5,6,7,8,10,12,12,12,12,12,12,12,12,12,12,19]/1000};
 
 %% OPTIONS
 %{
@@ -172,6 +124,7 @@ ModelOptions.IntTime        = 3600; %3600 seconds/hour
 ModelOptions.TimeStamp      = SOAS.Time;
 ModelOptions.SavePath       = 'DoNotSave';
 ModelOptions.FixNOx         = 1;
+ModelOptions.DeclareVictory = 0;
 
 
 %%
@@ -185,7 +138,7 @@ ClassComposition.BrY = {...
      'BrNO2'                1                       1;
      'BrNO3'                1                       1;
      'HOBr'                 1                       1;
-     'Br2'                  2                       2;
+     'Br2'                  2                       1;
      'BrCl'                 1                       0;
      'IBr'                  1                       0;
      };
@@ -226,7 +179,7 @@ ClassComposition.NOx = {...
     };
 % fn = fieldnames(ModelOptions.ClassComposition);
 ModelOptions.ClassComposition = ClassComposition;
-ModelOptions.FixedClasses = {'BrY','IY'};
+ModelOptions.FixedClasses = {'IY','BrY'};
 ModelOptions.DilutionClasses = {'ClY'};
 
 
@@ -247,14 +200,15 @@ for fnInd = 1:numel(fn)
         disp([curr_fn,' Conc < 0: ', num2str(min(curr_Conc))]);
     end
 end
-% %% PLOTTING AND ANALYSIS
-% 
-% PlotConcGroup({'BrO','Br','HBr','BrNO2','BrNO3','HOBr','Br2', 'Br2', 'BrCl','IBr'},S,9);
-% title('Br_Y');
-% PlotConcGroup({'I','IO','HI','HOI','OIO','CH3I','INO','INO2','INO3','I2','I2O4','I2O2','I2O3','I2','I2O4','I2O2','I2O3','IBr','ICl'},S,9);
-% title('I_Y');
-% PlotConcGroup({'ClO','OClO','Cl','HCl','ClNO3','ClOO','HOCl','ClNO2','Cl2','Cl2O2','Cl2','Cl2O2', 'BrCl','ICl'},S,10);
-% title('Cl_Y');
-% 
+%% PLOTTING AND ANALYSIS
+
+close all;
+PlotConcGroup({'BrO','Br','HBr','BrNO2','BrNO3','HOBr','Br2', 'Br2', 'BrCl','IBr'},S,9);
+title('Br_Y');
+PlotConcGroup({'I','IO','HI','HOI','OIO','CH3I','INO','INO2','INO3','I2','I2O4','I2O2','I2O3','I2','I2O4','I2O2','I2O3','IBr','ICl'},S,9);
+title('I_Y');
+PlotConcGroup({'ClO','OClO','Cl','HCl','ClNO3','ClOO','HOCl','ClNO2','Cl2','Cl2O2','Cl2','Cl2O2', 'BrCl','ICl'},S,10);
+title('Cl_Y');
+% % 
 % PlotConcGroup({'NO','NO2'},S,2);
 % title('NO_x');

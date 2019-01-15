@@ -36,6 +36,12 @@ conc_bkgd = param{8};
 IntTime = param{9};
 Verbose = param{10};
 limited_r = param{11};
+fixed_classes = param{12};
+fixed_adjust_as    = param{13};
+fixed_class_conc = param{14};
+dilution_classes = param{15};
+dilution_bkgd    = param{16};
+dilution_adjust_as = param{17};
 % NOxinfo = param{11};
 NOxinfo = [];
 
@@ -59,6 +65,21 @@ G(:,limited_r) = I;
 %End limiting reactant section
 rates = k.*G; %chemical rates
 dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
+
+
+%To make class dilution work, we adjust the background concentration on the
+%fly
+if ~isempty(dilution_classes)
+    for classInd = 1:size(dilution_classes,1) %1 row/class
+        %For dilution, only species w. adjust_as = 1 have their background
+        %concentrations modified. 
+%         class_conc = sum(conc .* dilution_classes(classInd,:));
+        adj_as_conc = sum(conc .* dilution_classes(classInd,:) .* dilution_adjust_as(classInd,:));
+        scaled_bkgd_conc = dilution_bkgd(classInd)./adj_as_conc .* conc;
+        i = find(dilution_adjust_as(classInd,:)); %Replace the relevant conc_bkgd
+        conc_bkgd(i) = scaled_bkgd_conc(i);
+    end
+end
 
 %dilution
 if ~isinf(tgauss)
@@ -87,9 +108,37 @@ if ~isempty(NOxinfo)
     if t==IntTime, clear tlast; end %ready for next step
 end
 
+
+%Expanding the fixed NOx to a more
+%general constraint, fixed_classes
+if ~isempty(fixed_classes)
+    for classInd = 1:size(fixed_classes,1) %1 row/class
+        non_adjustable_class_conc = sum(conc.*fixed_classes(classInd,:).*(not(fixed_adjust_as(classInd,:))));
+        if non_adjustable_class_conc > fixed_class_conc(classInd)
+            error('One of the fixed classes has grown too large to be held constant. Check for non-chemical sources of fixed class members');
+        end
+        
+        total_rate_of_change = sum(dydt.*fixed_classes(classInd,:)); %Figure out how much the class as whole is changing
+        goal_rate_of_change = 0; %Constraints are held constant for each step
+        adjustment_needed = goal_rate_of_change - total_rate_of_change;
+        
+        %Then distribute it in proporition to how adjust_as is distributed   
+        class_composition = conc.*fixed_adjust_as(classInd,:)./sum(conc.*fixed_adjust_as(classInd,:).*fixed_classes(classInd,:));
+        distributed_adj = adjustment_needed.*class_composition; %Add the distributed adj to figure out how much to adjust it by
+        
+        new_dydt = dydt + distributed_adj;
+        dydt = new_dydt;
+        a = 18;
+    end
+end
+
 dydt(:,iHold) = 0; %no change for held species
 dydt = dydt';
 
+a = conc(641)/dydt(641);
+if a > 1
+    b = 18;
+end
 if Verbose>=3, meter(IntTime,t,10); end
 
 

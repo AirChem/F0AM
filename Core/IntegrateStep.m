@@ -12,7 +12,7 @@ function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
 %   conc_last:      1-D vector of output from previous step. Only needed if steps are linked.
 %   conc_bkgd:      1-D vector of background concentrations
 %   ModelOptions:   structure of model options
-%   Chem:           structure of chemistry variables (ChemFiles,f,iG,iRO2,iNOx,iHold)
+%   Chem:           structure of chemistry variables (ChemFiles,f,iG,iRO2,iNOx,iHold, and fixed/dilution class info)
 %   Sbroad:         SolarParam broadcast variable structure, generated from struct2parvar
 %   Sslice:         SolarParam sliced variable 1-D array
 %   Mbroad:         Met broadcast variable structure
@@ -104,6 +104,14 @@ for h = 1:nSolar
             conc_init_step(Chem.iNOx) = modelNOx.*sum(initNOx)./sum(modelNOx);
             % NOxinfo = [iNOx;initNOx]; %for adjustment in dydt_eval
         end
+        if ~isempty(Chem.fixed_classes)
+            for classInd = 1:size(Chem.fixed_classes,1) %1 row/class
+                modelClassConc = sum(conc_last.*Chem.fixed_classes(classInd,:));
+                initClass = Chem.fixed_class_conc(classInd,i);
+                iClass = find(Chem.fixed_classes(classInd,:));
+                conc_init_step(iClass) = conc_init_step(iClass).*initClass./modelClassConc;                
+            end
+        end
     else
         conc_init_step = conc_init;
     end
@@ -120,7 +128,13 @@ for h = 1:nSolar
         conc_bkgd,...
         ModelOptions.IntTime,...
         ModelOptions.Verbose,...
-        limited_r
+        limited_r,...
+        Chem.fixed_classes,...
+        Chem.fixed_adjust_as,...
+        Chem.fixed_class_conc(:,i),...
+        Chem.dilution_classes,...
+        Chem.dilution_bkgd(:,i),...
+        Chem.dilution_adjust_as,...
         };
     
     options = odeset('Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param)); %Jacobian speeds integration
