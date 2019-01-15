@@ -73,7 +73,6 @@ if ~isempty(dilution_classes)
     for classInd = 1:size(dilution_classes,1) %1 row/class
         %For dilution, only species w. adjust_as = 1 have their background
         %concentrations modified. 
-%         class_conc = sum(conc .* dilution_classes(classInd,:));
         adj_as_conc = sum(conc .* dilution_classes(classInd,:) .* dilution_adjust_as(classInd,:));
         scaled_bkgd_conc = dilution_bkgd(classInd)./adj_as_conc .* conc;
         i = find(dilution_adjust_as(classInd,:)); %Replace the relevant conc_bkgd
@@ -128,17 +127,12 @@ if ~isempty(fixed_classes)
         
         new_dydt = dydt + distributed_adj;
         dydt = new_dydt;
-        a = 18;
     end
 end
 
 dydt(:,iHold) = 0; %no change for held species
 dydt = dydt';
 
-a = conc(641)/dydt(641);
-if a > 1
-    b = 18;
-end
 if Verbose>=3, meter(IntTime,t,10); end
 
 
