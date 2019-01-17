@@ -1,6 +1,60 @@
 
 This document provides a summary of changes made to Model code.
-Questions? --> Glenn Wolfe, gwolfe@umbc.edu or glenn.m.wolfe@nasa.gov
+Questions? --> Glenn Wolfe, f0am.model@gmail.com
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20190108 TO ???
+
+F0AMv4
+
+## working notes
+
+Interpolating j's/k's for linked steps:
+ - will need to be careful in post-run rate calculations.
+
+##
+
+Throughout: changed "CAUTION" statements to warnings and tried to standardized warning/error messages
+
+F0AM_ModelCore
+
+    NEW family constraints
+        Added ability to conserve total concentration of a family of species (e.g. NOx).
+        Families are indicated within the InitConc input as a nested cell array (see user manual).
+        Code was added to multiple sections in F0AM_ModelCore to handle the inputs.
+        Other modifications to subroutines (IntegrateStep, Jac_eval, dydt_eval) as described below.
+        Also added a new function, Mass_eval.m, for ODE treatment.
+        As part of this change, the option "FixNOx" was also removed.
+
+    ASSIGN DEFAULTS AND CHECK INPUTS Section:
+     - Added input check for jcorr when it is input as a string or cell array.
+     - Replace Met.tgauss with default value (inf) if both tgauss and kdil are specified in Met.
+     - Added warning that input SZA is overwritten in solar cycle mode.
+
+    INTEGRATION section
+     - renamed i and j to "istep" and "irep" for better readability.
+
+InitializeChemistry:
+ - Modified error message for checking presence of jcorr variables in Jnames
+
+IntegrateStep:
+ - Added mass matrix for ODE to accomodate family conservation code.
+
+Jac_eval:
+ - Added comments and spaced out some code for clarity.
+ - Added a few lines to accomodate family conservation constraints.
+
+dydt_eval:
+ - Added a few lines for family conservation.
+
+New Functions
+
+    F0AM_benchmark: setup script to evaluate performance when monkeying with model guts.
+        Still needs work for standardization.
+
+    Mass_eval: function to generate "mass matrix" used with ODE solver when constraining families.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

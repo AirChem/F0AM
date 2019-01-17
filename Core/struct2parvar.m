@@ -12,7 +12,7 @@ function [Xbroad,Xslice] = struct2parvar(X)
 %
 % OUTPUTS:
 % Xbroad: a structure containing variables that will be broadcast to all workers (scalars and strings).
-%   Also contains to fields that allow reconstruction of the variables in Xslice:
+%   Also contains two fields that allow reconstruction of the variables in Xslice:
 %       names: cell array of names of variables used to make Xslice.
 %       ncol:  number of columns for each variable in names.
 % Xslice: a 2-D matrix containing all slicable arrays and matrices.

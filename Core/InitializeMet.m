@@ -20,8 +20,8 @@ MetInfo = {...
     'T'             1               [];... % Temperature, K
     'RH'            0               [];... % relative humidity. note, water is handled as a special case in F0AM_ModelCore input checking
     'H2O'           0               [];... % water concentration, /cm^3
-    'kdil'          0               0;...  % dilution constant, /s
-    'tgauss'        0              Inf;... % initial timescale for Gaussian dilution, s
+    'kdil'          0                0;... % dilution constant, /s
+    'tgauss'        0              inf;... % initial timescale for Gaussian dilution, s
     
     % PHOTOLYSIS
     'SZA'           0               0;...   % solar zenith angle, degrees
