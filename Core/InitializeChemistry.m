@@ -1,35 +1,33 @@
 function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,firstCall)
 % function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,FirstCall)
 % Generates parameters for calculating time rate of change of chemical species
-% using the dydt_eval function.
+% used in the dydt_eval function.
 %
 % INPUTS:
-% Met: a structure containing the following fields:
-%       T: temperature, K
-%       P: pressure, mbar
-%       M: number density, molec/cm3
-%       RH: relative humidity, %
-%       H2O: water conc, molec/cm3
-%       SZA: solar zenith angle, degrees
-%       jcorr: correction factor for MCM j-values. 
-%       jcorr_all: (optional) array of correction factors for all J-values. Generated as an output
-%                  on first call to this function.
-%       Jx: Any photolysis rates (J values) to be replaced. The name should be the same as that of
-%           the MCM J-value (e.g., J4 for NO2 photolysis). One row for each J-value. units of /s.
+% Met: a structure containing any numer of meteorological variables.
+%       See InitializeMet.m for a list of valid variables (which users can modify as needed).
+%       Also might contain the following optional fields: 
+%       jcorr_all:  array of correction factors for all J-values. Generated as an output
+%                   on first call to this function. Used for scaling j-values during a solar cycle
+%                   run.
+%       Jx:         Any photolysis rates (J values) to be replaced. The name should be the same as that of
+%                   the mechanism J-value (e.g., J4 for NO2 photolysis in MCM). units of /s.
 % ChemFiles: a cell array containing the names of all sub-mechanism scripts.
 %            The first cell is assumed to be a function or script to create generic rate
-%            constants for a given mechanism (or it can be empty).
+%            constants for a given mechanism. The output must be a structure.
 %            The second cell is assuemd to be a function or script to create J-values for a given
-%            mechanism (or it can be empty).
-% ModelOptions: a structure containing various options. For more info, see ModelCore comments.
-% firstCall: a flag to let function know whether or not it is being called for the first time.
+%            mechanism. The output must be a structure.
+%            Either or both of the first two cells can also be empty strings.
+%            All subsequent cells are scripts for mechanisms or sub-mechanisms.
+% ModelOptions: a structure containing various options. See F0AM_UserManual.pdf.
+% firstCall: a flag to let the function know whether or not it is being called for the first time in F0AM_ModelCore.
 %
 % OUTPUTS:
 % Cnames: cell array of species names
 % Rnames: cell array of reaction names
-% k: matrix of rate constants. dimensions are length(T) x length(Rnames)
+% k: matrix of rate constants. dimensions are (# of steps) x length(Rnames)
 % f: sparse stoichiometric coefficient matrix, used in dydt_eval to calculate dydt for each species.
-%    dimensions are length(nRx) x #ofspecies.
+%    dimensions are length(nRx) x (# of species).
 % iG: 2-column vector containing indices of reactants for each reaction
 % iRO2: 1-column index of RO2 species locations.
 % jcorr: generic scaling factor for un-constrained j-values
@@ -82,7 +80,7 @@ if ~isempty(ChemFiles{2})
      [jval,Jnames] = breakin(J);
     
     % scaling
-    % jcorr_all should be part of Met structure after first call to this function
+    % jcorr_all should be field in Met after first call to this function in F0AM_ModelCore.m
     if firstCall %first time thru only
         
         % calculate scaling factors for all constrained J
@@ -90,16 +88,17 @@ if ~isempty(ChemFiles{2})
         [iCon,Mloc] = ismember(Jnames,Mnames); %flag for Jnames appearing in Mnames, and location in Mnames
         if any(iCon)
             jvalCon = eval(['[' cellstr2str(Mnames(Mloc(iCon))) ']']); %matrix of constrained J
-            jcorr_all(:,iCon) = jvalCon./jval(:,iCon); %might get /0 warnings
+            jcorr_all(:,iCon) = jvalCon./jval(:,iCon); %might get /0 warning
             jcorr_all(jval==0) = 1;
             jcorr_all(SZA>=90,:) = 1;
         end
         
         % determine generic scaling factor for non-constrained J
-        if ischar(jcorr) || iscellstr(jcorr)
-            [~,Jloc] = ismember(jcorr,Jnames);
+        if iscellstr(jcorr)
+            [tf,Jloc] = ismember(jcorr,Jnames);
             if isempty(Jloc)
-                error('InitializeChemistry: one or more jcorr J-values not found in Met!')
+                error('InitializeChemistry:InvalidInput',...
+                    'Met.jcorr variable "%s" not output by ChemFiles function "%s".',jcorr{tf},ChemFiles{2})
             end
             jcorr = mean(jcorr_all(:,Jloc),2); %grab and average and replace string with numeric array
         end
@@ -107,7 +106,7 @@ if ~isempty(ChemFiles{2})
     end
     
     jval = jcorr_all.*jval;
-    breakout(jval,Jnames);
+    breakout(jval,Jnames); %create variables in workspace
 end
 
 %%%%% ACCUMULATE CHEMISTRY %%%%%
@@ -134,8 +133,17 @@ iempty = cellfun('isempty',Gstr);
 Gstr(iempty) = {'ONE'}; %replace empty cells with name of "ONE" species (all 1's)
 [~,iG] = ismember(Gstr,Cnames); %generate index, iG, for reactant locations
 
-if sum(iC)>nSp, disp('CAUTION: Number of species under-guessed. Consider revising InitializeChemistry.m.'); end
-if sum(iR)>nRx, disp('CAUTION: Number of reactions under-guessed. Consider revising InitializeChemistry.m.'); end
+if sum(iC)>nSp
+    warning('InitializeChemistry:MemoryAllocation',...
+        ['Number of species under-guessed (guess: %u, actual: %u). '...
+        'Consider revising parameter nSp in InitializeChemistry.m.'],nSp,sum(iC));
+end
+
+if sum(iC)>nSp
+    warning('InitializeChemistry:MemoryAllocation',...
+        ['Number of reactions under-guessed (guess: %u, actual: %u). '...
+        'Consider revising parameter nRx in InitializeChemistry.m.'],nRx,sum(iR));
+end
 
 %%%%% CHECK FOR DUPLICATE REACTIONS %%%%%
 if nargin<4 || firstCall
@@ -150,7 +158,8 @@ if nargin<4 || firstCall
     repRx(notRep)=[];
     
     if ~isempty(repRx)
-        disp('CAUTION: Potential duplicate reactions found:')
+        warning('InitializeChemistry:DuplicateReactions',...
+            'Potential duplicate reactions found:')
         disp(repRx)
     end
 end

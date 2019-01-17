@@ -19,7 +19,7 @@ for iSp = 1:length(SpeciesToAdd)
     if ismember(SpNow,Cnames(1:iC-1)), continue;
     else
         Cnames{iC} = SpNow;
-        eval(['f' SpNow '=zeros(nRx,1);']); %writes new f
+        eval(['f' SpNow '=zeros(nRx,1);']); %create new f
         fstr = [fstr ' f' SpNow];
         iC = iC + 1; %increment species index
     end

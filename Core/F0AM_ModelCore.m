@@ -1,8 +1,8 @@
 function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam)
 % S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam)
-% Core model code for the Framework for 0-D Atmospheric Modeling (F0AMv3).
+% Core execution for the Framework for 0-D Atmospheric Modeling (F0AMv3).
 % Descended from the University of Washington Chemical Model (UWCM), first beget 20101211 by GMW/JAT.
-% See ReadMe for descriptions of inputs and outputs.
+% See F0AM_UserManual.pdf for descriptions of inputs and outputs.
 %
 % 20120210 GMW
 % 20120909 GMW    Added a check for valid options before assigning defaults.
@@ -10,14 +10,14 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 % 20131022 GMW    Work began on v2.2. See Changelog for info.
 % 20150601 GMW    Work began on v3.0. See Changelog.
 % 20160901 GMW    Work began on v3.2. See Changelog.
-
+% 20190108 GMW    Work began on v4. See Changelog.
 
 %%   ASSIGN DEFAULTS AND CHECK INPUTS
 
 StartTime = now;
 disp('INITIALIZING MODEL...')
 
-%convert inputs to structures
+% convert inputs to structures
 holdFlag = logical(cell2mat(InitConc(:,3)));
 Met      = breakout(Met(:,2),Met(:,1));
 InitConc = breakout(InitConc(:,2),InitConc(:,1));
@@ -33,7 +33,6 @@ FieldInfo = {...
     'Repeat'            0               1   ;...
     'SavePath'          0               ''  ;...
     'TimeStamp'         0               []  ;...
-    'FixNOx'            0               0   ;...
     'DeclareVictory'    0               0   ;...
     'GoParallel'        0               0   ;...
     };
@@ -50,12 +49,7 @@ elseif ModelOptions.GoParallel && ~exist('parfor','builtin')
 elseif ModelOptions.Repeat>1 && ~ModelOptions.LinkSteps
     error('F0AM_ModelCore:InvalidInput',...
     ['ModelOptions.Repeat > 1 and ModelOptions.LinkSteps = 0 are incompatible. ' ...
-    'Why repeat the same model run twice???'])
-elseif ModelOptions.FixNOx
-    if any(~ismember({'NO','NO2'},fieldnames(InitConc))) % check that NO and NO2 are in InitConc
-        error('F0AM_ModelCore:MissingInput',...
-            'Cannot use ModelOptions.FixNOx if NO or NO2 missing from InitConc.')
-    end
+    'Why repeat the same model run???'])
 end
 
 % initialize parpool if needed
@@ -71,20 +65,34 @@ end
 % special water check
 wata = sum(isfield(Met,{'RH','H2O'}));
 if ~wata
-    error('F0AM_ModelCore:MissingInput','RH or H2O must be specified in Met.')
+    error('F0AM_ModelCore:MissingInput',...
+        'RH or H2O must be specified in Met.')
 elseif wata==2
-    disp('CAUTION: RH and H2O both specified in Input "Met". H2O takes priority.')
+    warning('F0AM_ModelCore:UnusedInput',...
+        'RH and H2O both specified in Met. H2O takes priority.')
 end
 
 % special check for dilution options
 if all(isfield(Met,{'kdil','tgauss'}))
-    disp('CAUTION: kdil and tgauss both specified in Input "Met". kdil takes priority.')
+    warning('F0AM_ModelCore:UnusedInput',...
+        'kdil and tgauss both specified in Met. kdil takes priority.')
+    Met = rmfield(Met,'tgauss'); %dump it so will initialze with default
 end
 
-%check other fields
+% check other fields
 FieldInfo = InitializeMet;
 Met = CheckStructure(Met,FieldInfo,'J');
 if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end
+
+% j correction checks
+if ischar(Met.jcorr), Met.jcorr = {Met.jcorr}; end %convert to cell array for consistency
+if iscellstr(Met.jcorr)
+    tf = isfield(Met,Met.jcorr);
+    if any(tf)
+        error('F0AM_ModelCore:MissingInput',...
+            'Met.jcorr variable "%s" not found in Met.', Met.jcorr{~tf})
+    end
+end
 
 %%%%% SOLAR CYCLE PARAMETERS %%%%%
 if nargin==6
@@ -99,7 +107,12 @@ if nargin==6
         };
     SolarParam = CheckStructure(SolarParam,FieldInfo);
     
-    %need to get starting SZA
+    if isfield(Met,'SZA')
+        warning('F0AM_ModelCore:UnusedInput',...
+            'Solar cycle enabled. Input Met.SZA will be overwritten.')
+    end
+    
+    %need to get starting SZA for chemistry initialization
     sTime.year = SolarParam.startTime(:,1); sTime.month = SolarParam.startTime(:,2);
     sTime.day  = SolarParam.startTime(:,3); sTime.hour  = SolarParam.startTime(:,4);
     sTime.min  = SolarParam.startTime(:,5); sTime.sec   = SolarParam.startTime(:,6);
@@ -111,8 +124,6 @@ if nargin==6
     sun.zenith(sun.zenith>90) = 90;
     Met.SZA = sun.zenith;
     
-    SolarParam.startTime = datenum(SolarParam.startTime); % convert to date number for replication
-    
 else
     SolarFlag = 0;
     SolarParam.lat          = nan;
@@ -120,6 +131,21 @@ else
     SolarParam.alt          = nan;
     SolarParam.startTime    = nan;
     SolarParam.nDays        = nan;
+end
+
+%%%%% INITIAL CONCENTRATIONS %%%%%
+
+% remove family info from InitConc if present
+% assumes that cell array in second InitConc input column indicates a family
+Family = struct;
+family_flag = structfun(@iscell,InitConc);
+if any(family_flag)
+    Inames = fieldnames(InitConc);
+    Fnames = Inames(family_flag);
+    for i = 1:length(Fnames)
+        Family.(Fnames{i}).names = InitConc.(Fnames{i});
+    end
+    InitConc = rmfield(InitConc,Fnames);
 end
 
 %%%%% CHECK FOR NANS/NEGS AND COLUMNATE %%%%%
@@ -137,18 +163,21 @@ for i=1:length(ChemFiles)
     switch i
         case {1,2} %first two inputs should be functions or empty
             if isempty(p)
-                error('F0AM_ModelCore:InvalidInput',['In ChemFiles input, first two strings must be functions for K and J (in that order). '...
+                error('F0AM_ModelCore:InvalidInput',...
+                    ['In ChemFiles, first two strings must be functions for K and J (in that order). '...
                     'If referencing a function with no inputs, string should still include empty brackets ().'])
             end
             cfile = cfile(1:p-1); %for search path check below
         otherwise %all remaining inputs are scripts
             if ~isempty(p)
-                error('F0AM_ModelCore:InvalidInput','In ChemFiles input, strings 3:end must be scripts, not functions.')
+                error('F0AM_ModelCore:InvalidInput',...
+                    'In ChemFiles, rows 3:end must be scripts, not functions.')
             end
     end
             
     if ~exist(cfile,'file')
-        error('F0AM_ModelCore:InvalidInput','ChemFiles input "%s" not found on search path.',cfile)
+        error('F0AM_ModelCore:InvalidInput',...
+            'ChemFiles file "%s" not found on search path.',cfile)
     end
 end
 Chem.ChemFiles = ChemFiles;
@@ -165,6 +194,10 @@ Snames = fieldnames(SolarParam);
 % In such a case, all scalars inputs will be assumed to be the same for all runs, 
 % and the number of runs is determined by the length of the array inputs
 % (which must all be the same length).
+%
+% This section also doubles as a check on length consistency between inputs
+
+SolarParam.startTime = datenum(SolarParam.startTime); % convert to date number for replication
 
 %%%%%GET INPUT LENGTHS%%%%%
 lMet = structfun(@length,Met);
@@ -176,8 +209,9 @@ lSolar = structfun(@length,SolarParam);
 lUnq = unique([lMet; lInitConc; lBkgdConc; lSolar]); %unique lengths
 lUnq(lUnq==0)=[]; %ignore empty variables
 if length(lUnq)>2 || (length(lUnq)==2 && ~any(lUnq==1))
-    error(['F0AM_ModelCore: Number of constraints is inconsistent. ' ...
-        'Check lengths of variables for Met, InitConc, BkgdConc and SolarParam.'])
+    error('F0AM_ModelCore:InvalidInput',...
+        ['Length of constraints is inconsistent. ' ...
+        'Check lengths of inputs within Met, InitConc, BkgdConc and SolarParam.'])
 end
 
 %%%%%EXTEND INPUTS%%%%%
@@ -210,7 +244,7 @@ if length(lUnq)==2
     SolarParam.nDays = SolarParam.nDays(1);
     
 end
-SolarParam.startTime = datevec(SolarParam.startTime);
+SolarParam.startTime = datevec(SolarParam.startTime); %convert back from date number
 
 %%   INITIALIZE METEOROLOGY, CHEMISTRY
 
@@ -221,7 +255,8 @@ elseif isempty(Met.RH)
     Met.RH = ConvertHumidity(Met.T,Met.P,Met.H2O,'NumberDensity','RH');
 end
 
-[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all] = InitializeChemistry(Met,Chem.ChemFiles,ModelOptions,1);
+[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all] = ...
+    InitializeChemistry(Met,Chem.ChemFiles,ModelOptions,1);
 
 % lengths
 nRx = length(Chem.Rnames);  %number of reactions
@@ -236,7 +271,8 @@ for i=1:length(iC)
     if isSpecies(i)
         conc_init(:,iC(i)) = InitConc.(Inames{i});
     else
-        disp(['CAUTION: Init Species ' Inames{i} ' not found in reaction list.'])
+        warning('F0AM_ModelCore:UnusedInput',...
+        'InitConc species %s not found in ChemFiles species list.',Inames{i})
     end
 end
 Chem.iHold = iC(holdFlag & isSpecies); %flag for fixed concentrations
@@ -245,9 +281,60 @@ conc_init = conc_init.*repmat(Met.M,1,nSp)./1e9; %convert from ppb to molec/cc
 conc_init(:,1) = 1; %ONE is first species
 conc_init(:,2) = sum(conc_init(:,Chem.iRO2),2); %RO2 is second species
 
-if ModelOptions.FixNOx
-    [~,Chem.iNOx] = ismember({'NO','NO2'},Cnames); %get indices for NO and NO2
-%     Chem.NOxinfo = [iNOx; conc_init(1,iNOx)]; %for adjustments in dydt_eval
+%%   INITIALIZE FAMILIES
+
+Fnames = fieldnames(Family);
+for i = 1:length(Fnames)
+    names = Family.(Fnames{i}).names; %family member names
+    
+    % parse multipliers if present
+    scale = ones(size(names));
+    m = contains(names,'*'); % * is used for a multiplier by convention
+    if any(m)
+        scale(m) = str2double(extractBefore(names(m),'*'));
+        names(m) = extractAfter(names(m),'*');
+    end
+    
+    % check against InitConc inputs
+    [tf,loc] = ismember(names,Inames);
+    if ~any(tf) % check for at least 1 family member in InitConc
+        error('F0AM_ModelCore:MissingInput',...
+            ['No members of family "%s" found in InitConc. '...
+            'At least one family member must be initialized.'],...
+            Fnames{i})
+    elseif any(holdFlag(loc(tf))) %check for held family members
+        error('F0AM_ModelCore:InvalidInput',...
+            ['At least one member of family "%s" has HoldMe = 1 in InitConc. '...
+            'Family conservation and HoldMe are incompatible.'],...
+            Fnames{i})
+    end
+    
+    % check against other families
+    if i ~= length(Fnames)
+        for j = (i+1) : length(Fnames)
+            tf = ismember(names,Family.Fnames{j}.names);
+            if any(tf)
+                error('F0AM_ModelCore:InvalidInput',...
+                    ['Families %s and %s contain the same member. '...
+                    'A chemical species can only be a member of one family.'],...
+                    Fnames{i},Fnames{j})
+            end
+        end
+    end
+    
+    % locate members in Cnames list
+    [tf,index] = ismember(names,Cnames);
+    if any(~tf)
+        missing = names(find(~tf,1,'first'));
+        error('F0AM_ModelCore:InvalidInput',...
+            'Family member %s:%s not found in ChemFiles species list.',...
+            Fnames{i},missing)
+    end
+    
+    % build structure
+    Chem.Family.(Fnames{i}).names = names;
+    Chem.Family.(Fnames{i}).index = index;
+    Chem.Family.(Fnames{i}).scale = scale;
 end
 
 %%   INITIALIZE BACKGROUND CONCENTRATIONS (DILUTION)
@@ -260,12 +347,13 @@ else
 end
 
 %%%%% ASSIGN SPECIFIED VALUES %%%%%
-[isSpecies,iC] = ismember(Bnames,Cnames); %get index for location of Inames in Cnames
+[isSpecies,iC] = ismember(Bnames,Cnames); %get index for location of Bnames in Cnames
 for i=1:length(iC)
     if isSpecies(i)
         conc_bkgd(:,iC(i)) = BkgdConc.(Bnames{i});
     elseif ~strcmp('DEFAULT',Bnames{i})
-        disp(['CAUTION: Bkgd Species ' Bnames{i} ' not found in reaction list.'])
+        warning('F0AM_ModelCore:UnusedInput',...
+        'BkgdConc species %s not found in ChemFiles reaction list.',Bnames{i})
     end
 end
 
@@ -279,38 +367,40 @@ conc_bkgd(:,1) = 1; %ONE is first species
 [Sbroad,Sslice] = struct2parvar(SolarParam);
 [Mbroad,Mslice] = struct2parvar(Met);
 
-% initialize outputs
+% initialize outputs as cell arrays (will parse/concatenate after run)
 [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = deal(cell(nIc,ModelOptions.Repeat));
 
 % loop through constraints
-for j = 1:ModelOptions.Repeat
+for irep = 1:ModelOptions.Repeat
     
-    % display
+    % message
     if ModelOptions.Verbose>=1 && ModelOptions.Repeat>1
-        fprintf('Rep %u of %u\n',j,ModelOptions.Repeat)
+        fprintf('Rep %u of %u\n',irep,ModelOptions.Repeat)
     end
     
     % get last model output for linking Repeat loops if needed
-    if j==1, conc_last = [];
-    else,    conc_last = Conc{end,j-1}(end,:);
+    if irep==1, conc_last = [];
+    else,       conc_last = Conc{end,irep-1}(end,:);
     end
         
     if ModelOptions.GoParallel
 
         % parallel for-loop
-        parfor i = 1:nIc
-            [Conc{i,j},Time{i,j},StepIndex{i,j},RepIndex{i,j},k_solar{i,j},SZA_solar{i,j}] = ...
-                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:));
+        parfor istep = 1:nIc
+            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},k_solar{istep,irep},SZA_solar{istep,irep}] = ...
+                IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
+                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
         end
         
     else
         
         % serial for-loop
-        for i = 1:nIc
-            [Conc{i,j},Time{i,j},StepIndex{i,j},RepIndex{i,j},k_solar{i,j},SZA_solar{i,j}] = ...
-                IntegrateStep(i,j,nIc,conc_init(i,:),conc_last,conc_bkgd(i,:),ModelOptions,Chem,k(i,:),Sbroad,Sslice(i,:),Mbroad,Mslice(i,:));
+        for istep = 1:nIc
+            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},k_solar{istep,irep},SZA_solar{istep,irep}] = ...
+                IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
+                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
             
-            if ModelOptions.LinkSteps, conc_last = Conc{i,j}(end,:); end
+            if ModelOptions.LinkSteps, conc_last = Conc{istep,irep}(end,:); end
         end
         
     end  % end for/parfor choice
@@ -319,7 +409,7 @@ end      % end Repeat loop
 RunTime = (now - StartTime);
 disp(['TOTAL RUN TIME IS ' datestr(RunTime,'HH:MM:SS')])
 
-% transform outputs
+% transform outputs to matrices
 Conc        = cell2mat(Conc(:));
 Time        = cell2mat(Time(:));
 StepIndex   = cell2mat(StepIndex(:));
@@ -340,7 +430,7 @@ end
 Conc(:,2) = sum(Conc(:,Chem.iRO2),2);
 G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2));
 Mbig = Met.M(StepIndex);
-if size(Chem.k,1)~= size(G,1) %not always so if EndPointsOnly=0
+if size(Chem.k,1) ~= size(G,1) %not always so if EndPointsOnly=0
     kbig = Chem.k(StepIndex,:); %expand to size of G
 else
     kbig = Chem.k;
@@ -351,7 +441,7 @@ Chem.Rates = kbig.*G./repmat(Mbig,1,nRx).*1e9; %units of ppb/s
 if ~isinf(Met.tgauss)
     kdil = 1./(Met.tgauss(StepIndex) + 2*Time); %Gaussian dispersion
 else
-    kdil = Met.kdil(StepIndex); %1st-order dilution
+    kdil = Met.kdil(StepIndex); %first-order dilution
 end
 kdilbig = repmat(kdil,1,nSp);
 conc_bkgd_big = conc_bkgd(StepIndex,:);
@@ -375,14 +465,15 @@ if ~isempty(ModelOptions.TimeStamp)
         Time2Rep = Time2Rep + (max(Time2Rep)+dTime)*(RepIndex-1); %force Time to not repeat
         Time = Time2Rep;
     else
-        disp('CAUTION: TimeStamp and Time are different lengths. Output "Time" not overwritten.')
+        warning('F0AM_ModelCore:UnusedInput',...
+            'ModelOptions.TimeStamp and output Time are different lengths. Time not overwritten.')
     end
 end
 
 %%   ACCUMULATE VARIABLES INTO STRUCTURE AND SAVE
 
 %%%%%PUT VARIABLES INTO STRUCTURE%%%%%
-iRO2 = Chem.iRO2; %legacy 
+iRO2 = Chem.iRO2; %legacy v3.1. To be removed in the future.
 vars ={'Met','InitConc','BkgdConc','ModelOptions','SolarParam',...
     'Cnames','Conc','Time','StepIndex','RepIndex','iRO2','Chem'};
 S = struct();
@@ -403,5 +494,4 @@ end
 if ModelOptions.DeclareVictory
     victory
 end
-
 

@@ -24,6 +24,7 @@ function Sout = CheckStructure(Sin,FieldInfo,ignorePrefix)
 % 20131022 GMW  Commented out "Valid field" checking to accomodate J-values in Met.
 % 20150602 GMW  Added "valid field" code back in and added the "ignorePrefix" option to deal with
 %               optional J-value inputs.
+% 20180113 GMW  Revised error messages to include message ID.
 
 %Parse inputs
 Sname       = inputname(1);
@@ -42,8 +43,9 @@ end
 check = ismember(Sfields,ValidFields);
 if any(~check)
     Bad = cellstr2str(Sfields(~check));
-    error(['CheckStructure: Field(s) "' Bad '" in structure "' Sname '" not valid.'...
-        ' Valid fields are: ' cellstr2str(ValidFields) '.'])
+    error('CheckStructure:InvalidField',...
+        'Field "%s" in structure "%s" not valid. Valid fields are: %s.',...
+        Bad,Sname,cellstr2str(ValidFields))
 end
 
 %check for required fields
@@ -52,8 +54,9 @@ if ~isempty(RequiredFields)
         check = ismember(RequiredFields,Sfields);
     if any(~check)
         Bad = cellstr2str(RequiredFields(~check));
-        error(['CheckStructure: Required field(s) "' Bad '" in structure "' Sname '" not found.'...
-            ' Required fields are: ' cellstr2str(RequiredFields) '.'])
+        error('CheckStructure:MissingField',...
+        'Required field "%s" in structure "%s" not found. Required fields are: %s.',...
+        Bad,Sname,cellstr2str(RequiredFields))
     end
 end
 
