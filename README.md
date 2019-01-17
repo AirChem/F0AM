@@ -8,6 +8,8 @@ Contact: F0AM.model at gmail.com
 
 Discussion Forum/Email List: https://groups.google.com/forum/#!forum/f0amusers
 
+# THIS IS F0AM V4.0 BETA. CODE IS UNDER DEVELOPMENT FOR FUTURE RELEASE.
+
 ### Welcome!
 F0AM is a MATLAB program for simulating atmospheric chemistry systems. It is user-friendly and adaptable to a variety of typical applications, including:
 - Analysis of laboratory chamber experiments
