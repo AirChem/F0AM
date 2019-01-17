@@ -1,0 +1,12 @@
+Hi Glenn, 
+
+Zach and I managed to get together and combine our mechanisms. Attached is a .fac file, .m file, and a PowerPoint with notes of the reactions that we added to the MCM.
+
+The .fac and .m files include all of the reactions of MCM 3.3.1. The reactions that we added start at lines 18310 (.fac) and 104071 (.m). The RO2 definitions were updated as needed.
+
+We also updated some of the photolysis rate constants for furfural and benzaldehyde and added these to the photolysis scripts (J_BottomUp, MCMv331_J). Furfural has strong absorption at 254 nm, and anyone who tries to model chamber experiments run with 254 nm light will need to account for this loss.
+
+I *think* these are all the changes that we made. If you find any issues when incorporating this, please let us know and we can try to resolve.
+
+Best,
+Matt
