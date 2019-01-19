@@ -1,20 +1,11 @@
 function J = J_Hybrid(SZA,ALT,O3col,albedo)
 % function J = J_Hybrid(SZA,ALT,O3col,albedo)
 % Interpolates hybrid J-values to desired SZA, altitude,O3column and albedo.
-% The J-values found in Jhybrid.mat were derived using a combination of TUV solar spectra
-% and custom-compiled quantum yields (QY) and cross sections (CS).
-%
-% Clear-sky TUVv5.2 solar spectra were calculated with the following inputs:
-%   SZA         0:5:90      degrees
-%   Altitude    0:1:15      km
-%   O3 column   100:50:600  DU
-%   albedo      0:0.2:1
-%   ground Alt  0           km
-%   AOD         0.235       
-% For more detailed info on TUV setup, see TUV_ActinicFlux.m and TUV_WriteInputFile_ActinicFlux.m.
-% 
-% QY and CS information was taken from IUPAC and/or JPL recommendations as documented in 
-% PhotoDataSources.xlsx. For more info on the calculation, see J_BottomUp.m.
+% The J-value lookup tables found in HybridJtables.mat are derived from TUV solar spectra 
+% and literature cross sections (CS) and quantum yields (QY).
+% QY and CS information are from IUPAC and/or JPL recommendations as documented in PhotoDataSources.xlsx.
+% The lookup tables are compiled offline using calc_HybridJtables.m and J_BottomUp.m. 
+% Information on generating new lookup tables is provided in F0AM_UserManual.pdf.
 %
 % INPUTS:
 % SZA: solar zenith angles, degrees. can be scalar or vector.
@@ -28,11 +19,14 @@ function J = J_Hybrid(SZA,ALT,O3col,albedo)
 %
 % 20160304 GMW
 % 20160406 GMW  Added O3col and albedo inputs
+% 20180118 GMW  Renamed "HybridJvalues.mat" to "HybridJtables.mat."
+%               Regenerated tables using correct US Standard Atmosphere T/P profiles.
+%               Cleaned comments.
 
 
 SZA(SZA>90)=90;
 
-load HybridJvalues.mat %structure Jhybrid, matrices SZAhybrid, ALThybrid, O3Chybrid, ALBhybrid
+load('HybridJtables.mat','Jhybrid','SZAhybrid','ALThybrid','O3Chybrid','ALBhybrid')
 
 J = struct;
 Jnames = fieldnames(Jhybrid);

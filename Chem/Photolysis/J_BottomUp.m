@@ -409,9 +409,7 @@ Jnames{i} = 'Jn36'; %HOCL -> OH + CL
 CS{i} = 'Cross_Section_HOCl.csv';
 QY{i} = 1;
 
-% end of list
-
-% integrate 'em
+%% integrate 'em
 J = struct;
 for i=1:nj
     plotem=0;

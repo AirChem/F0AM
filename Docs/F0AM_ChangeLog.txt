@@ -8,13 +8,6 @@ Questions? --> Glenn Wolfe, f0am.model@gmail.com
 
 F0AMv4
 
-## working notes
-
-Interpolating j's/k's for linked steps:
- - will need to be careful in post-run rate calculations.
-
-##
-
 Throughout: changed "CAUTION" statements to warnings and tried to standardized warning/error messages
 
 F0AM_ModelCore
@@ -48,12 +41,23 @@ Jac_eval:
 dydt_eval:
  - Added a few lines for family conservation.
 
+Hybrid J-values:
+ - Changed vertical profiles of T and P used to calculate J-values.
+   T: Was using a lapse rate of 9.8 K/km, switched to U.S. standard atmosphere value of 6.5 K/km below 11 km, 0 K/km above.
+   P: Now uses correct US standard atmosphere formulae (see wikipedia and USatmos.m).
+ - Added calc_HybridJtables.m and TUV_ActFlux_tables.mat to \Chem\Photolysis\ so that users can generate their own HybridJtables.mat if needed.
+   Also added procedure in F0AM_UserManual.
+
 New Functions
 
     F0AM_benchmark: setup script to evaluate performance when monkeying with model guts.
         Still needs work for standardization.
 
     Mass_eval: function to generate "mass matrix" used with ODE solver when constraining families.
+
+    USatmos: new function in \Tools\ to calculate T and P altitude profiles for standard US Atmosphere.
+    
+    calc_HybridJtables: function to regenerate HybridJtables.mat if needed.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
