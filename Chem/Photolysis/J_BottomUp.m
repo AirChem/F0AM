@@ -27,6 +27,7 @@ function J = J_BottomUp(LFlux,T,P,J2plot)
 % 20160301 JL	Added values for numerous species not found in the MCM.
 % 20160304 GMW  Changed output from name/value pair to structure.
 % 20160425 GMW  Added plotting option.
+% 20190122 GMW  Added Jn37 - 50 for Sherwen GEOS-Chem mechanism.
 
 % Initialization
 nj = 70; %number of rate constants
@@ -409,9 +410,86 @@ Jnames{i} = 'Jn36'; %HOCL -> OH + CL
 CS{i} = 'Cross_Section_HOCl.csv';
 QY{i} = 1;
 
+%% MORE HALOGENS FOR SHERWEN GEOSCHEM MECHANISM
+
+i = i + 1;
+Jnames{i} = 'Jn37';
+CS{i} = 'Cross_Section_OClO_Wahner(1987)_296K_245-475nm(0.22nm).txt';
+QY{i} = 1;
+
+i = i + 1;
+Jnames{i} = 'Jn38';
+CS{i} = 'Cross_Section_ClOOCl_JPL-2010(2011)_190-250K_200-420nm(rec).txt';
+QY{i} = 1;
+
+
+i = i + 1;
+Jnames{i} = 'Jn39';
+CS{i} = 'Cross_Section_ClOO_JPL-2010(2011)_191K_220-280nm(rec).txt';
+QY{i} = 1;
+
+%Iodine Photolysis:
+i = i + 1;
+Jnames{i} = 'Jn40';
+CS{i} = 'Cross_Section_I2_JPL-2010(2011)_295K_185-700nm(rec).txt';
+QY{i} = 'QY_I2.txt';
+
+i = i + 1;
+Jnames{i} = 'Jn41';
+CS{i} = 'Cross_Section_HOI_JPL-2010(2011)_295-298K_280-480nm(rec).txt';
+QY{i} = 1;
+
+i = i + 1;
+Jnames{i} = 'Jn42';
+CS{i} = 'Cross_Section_IO_JPL-2010(2011)_298K_339-417nm(rec).txt';
+QY{i} = 0.91;
+
+i = i + 1;
+Jnames{i} = 'Jn43';
+CS{i} = 'Cross_Section_OIO_JPL-2010(2011)_295K_516-572nm(rec).txt';
+QY{i} = 1;
+
+%Iodine Nitrates
+i = i + 1;
+Jnames{i} = 'Jn44';
+CS{i} = 'Cross_Section_INO_JPL-2010(2011)_298K_223-460nm(rec).txt';
+QY{i} = 1;
+
+i = i + 1;
+Jnames{i} = 'Jn45';
+CS{i} = 'Cross_Section_INO2_JPL-2010(2011)_298K_210-380nm(rec).txt';
+QY{i} = 1;
+
+i = i + 1;
+Jnames{i} = 'Jn46';
+CS{i} = 'Cross_Section_IONO2_JPL-2010(2011)_298K_245-415nm(rec).txt';
+QY{i} = 1;
+
+%For I2Ox, following Sherwen et al 2016, which uses the CS and QY from INO3
+%for all of these
+i = i + 1;
+Jnames{i} = 'Jn47';
+CS{i} = 'Cross_Section_IONO2_JPL-2010(2011)_298K_245-415nm(rec).txt';
+QY{i} = 0.21;
+
+i = i + 1;
+Jnames{i} = 'Jn48';
+CS{i} = 'Cross_Section_IONO2_JPL-2010(2011)_298K_245-415nm(rec).txt';
+QY{i} = 0.21;
+
+i = i + 1;
+Jnames{i} = 'Jn49';
+CS{i} = 'Cross_Section_IONO2_JPL-2010(2011)_298K_245-415nm(rec).txt';
+QY{i} = 0.21;
+
+i = i + 1;
+Jnames{i} = 'Jn50';
+CS{i} = 'Cross_Section_ICl_JPL-2010(2011)_298K_210-600nm(rec).txt';
+QY{i} = 1; %Haven't checked this. 
+
 % end of list
 
-% integrate 'em
+%% INTEGRATE
 J = struct;
 for i=1:nj
     plotem=0;
