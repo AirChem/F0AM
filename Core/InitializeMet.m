@@ -36,7 +36,8 @@ MetInfo = {...
     'PPFD'          0               0;...    % umol/m^2/s
     'LAI'           0               1;...    % m^2/m^2
     
-    % AEROSOL (ORGANIC)
+    
+    % AEROSOL (ORGANIC/GENERIC)
     'rpaerosol'     0               0;... % mean aerosol particle radius, cm
     'Naerosol'      0               0;... % aerosol number density, #/cm^3
     'Saerosol'      0               0;... % mean aerosol particle surface area concentration cm^2/cm^3

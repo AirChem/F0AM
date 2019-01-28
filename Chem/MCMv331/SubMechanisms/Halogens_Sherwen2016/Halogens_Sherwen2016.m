@@ -1,9 +1,11 @@
-%Halogens_Sherwen2016.m
+% Halogens_Sherwen2016.m
 % Halogen Reactions - Copied with modification from Sherwen et al 2016
 % This file covers tables B2 & B3 in Sherwen et al 2016, except for
 % the chemistry of CHxXy, which are not included in this model. 
+% As implemented in Romer et al. (2018).
+% NOTE THAT THIS IS NOT THE COMPLETE SHERWEN MECHANISM!
 %
-% Note that even though the source mechanism is GEOSChem, this F0AM script is designed to work
+% Even though the source mechanism comes from GEOSChem, this F0AM script is designed to work
 % with MCMv331.
 %
 % WARNING REGARDING PHOTOLYSIS REACTIONS
@@ -203,6 +205,12 @@ fClOO(i) = -1; fCl(i) = 1;
  k(:,i) = Jn50;
  Gstr{i,1} = 'ICl';
  fICl(i) = -1; fI(i) = 1; fCl(i) = 1;
+ 
+ i = i + 1; %J_from  Saiz-Lopez et al, 2014 to have something for IBr to do.
+ Rnames{i} = 'IBr + hv = I + Br';
+ k(:,i) = Jn51;
+ Gstr{i,1} = 'IBr';
+ fIBr(i) = -1; fI(i) = 1; fBr(i) = 1;
 
 %==============================
 %Table B2:
@@ -805,6 +813,5 @@ k(:,i) = ThreeBodyK_LH(1.8e-31 .* (T./300).^-2.0,1.0e-10 .* (T./300).^-1.0,M,0.6
 Gstr{i,1} = 'Cl'; Gstr{i,2} = 'NO2';
 fCl(i) = -1; fNO2(i) = -1; fClNO2(i) = 1;
 
-
-
+% END OF REACTION LIST
 

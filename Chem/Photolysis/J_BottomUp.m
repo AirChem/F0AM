@@ -488,11 +488,16 @@ Jnames{i} = 'Jn50';
 CS{i} = 'Cross_Section_ICl_JPL-2010(2011)_298K_210-600nm(rec).txt';
 QY{i} = 1; %Haven't checked this. 
 
+i = i + 1;
+Jnames{i} = 'Jn51';
+CS{i} = 'Cross_Section_IBr_JPL-2010(2011)_298K_220-600nm(rec).txt';
+QY{i} = 1; %Haven't checked this.
+
 % end of list
 
 %% INTEGRATE
 
-nJ = i;
+nj = i;
 J = struct;
 for i=1:nj
     plotem=0;

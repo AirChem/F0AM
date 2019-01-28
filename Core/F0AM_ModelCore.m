@@ -255,7 +255,7 @@ elseif isempty(Met.RH)
     Met.RH = ConvertHumidity(Met.T,Met.P,Met.H2O,'NumberDensity','RH');
 end
 
-[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all] = ...
+[Cnames,Chem.Rnames,k,Chem.f,Chem.iG,Chem.iRO2,Met.jcorr,Met.jcorr_all,Chem.iLR] = ...
     InitializeChemistry(Met,Chem.ChemFiles,ModelOptions,1);
 
 % lengths
@@ -284,6 +284,7 @@ conc_init(:,2) = sum(conc_init(:,Chem.iRO2),2); %RO2 is second species
 %%   INITIALIZE FAMILIES
 
 Fnames = fieldnames(Family);
+Chem.Family = struct;
 for i = 1:length(Fnames)
     names = Family.(Fnames{i}).names; %family member names
     
@@ -312,7 +313,7 @@ for i = 1:length(Fnames)
     % check against other families
     if i ~= length(Fnames)
         for j = (i+1) : length(Fnames)
-            tf = ismember(names,Family.Fnames{j}.names);
+            tf = ismember(names,Family.(Fnames{j}).names);
             if any(tf)
                 error('F0AM_ModelCore:InvalidInput',...
                     ['Families %s and %s contain the same member. '...
@@ -427,8 +428,10 @@ end
 %%   POST-RUN CALCULATIONS
 
 %Chemical rates
-Conc(:,2) = sum(Conc(:,Chem.iRO2),2);
+Conc(:,2) = sum(Conc(:,Chem.iRO2),2); %RO2
 G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2));
+Glr = min(Conc(:,Chem.iG(Chem.iLR,1)),Conc(:,Chem.iG(Chem.iLR,2))); %limiting reagent replacement
+G(:,Chem.iLR) = Glr;
 Mbig = Met.M(StepIndex);
 if size(Chem.k,1) ~= size(G,1) %not always so if EndPointsOnly=0
     kbig = Chem.k(StepIndex,:); %expand to size of G
@@ -456,14 +459,13 @@ Conc = Conc./repmat(Met.M(StepIndex),1,nSp).*1e9; %to ppb
 Conc(:,1) = 1;
 Conc = breakout(Conc,Cnames); %to structure
 
-%Time
+% Time
 if ~isempty(ModelOptions.TimeStamp)
     ModelOptions.TimeStamp = ModelOptions.TimeStamp(:); %ensure column vector
     Time2Rep = repmat(ModelOptions.TimeStamp,ModelOptions.Repeat,1);
     dTime = median(diff(Time2Rep)); %assumes equal spacing
     if length(Time2Rep) == length(RepIndex)
-        Time2Rep = Time2Rep + (max(Time2Rep)+dTime)*(RepIndex-1); %force Time to not repeat
-        Time = Time2Rep;
+        Time = Time2Rep + (max(Time2Rep)+dTime)*(RepIndex-1); %force Time to not repeat
     else
         warning('F0AM_ModelCore:UnusedInput',...
             'ModelOptions.TimeStamp and output Time are different lengths. Time not overwritten.')
