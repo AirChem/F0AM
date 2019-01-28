@@ -9,19 +9,33 @@ function mass = Mass_eval(~,conc,param)
 %
 % 20190115 GMW
         
-%%%%%BREAKOUT PARAMETERS%%%%%
-Family        = param{11};
+%% BREAKOUT PARAMETERS
+k           = param{1};
+f           = param{2};
+iG          = param{3};
+iRO2        = param{4};
+iHold       = param{5};
+kdil        = param{6};
+tgauss      = param{7};
+conc_bkgd   = param{8};
+% IntTime     = param{9};
+% Verbose     = param{10};
+Family      = param{11};
+iLR         = param{12};
 
-%initialize
+%% initialize
 nSp = length(conc);
 mass = speye(nSp); 
+conc = conc';
  
- % family conservation
- % choose member with lowest concentration for family conservation 
+ %% family conservation
  Fnames = fieldnames(Family);
  for i = length(Fnames)
      j = Family.(Fnames{i}).index;
-     [~,m] = min(conc(j));
+     
+%      [~,m] = min(conc(j).*Family.(Fnames{i}).scale); %member with smallest concentration
+     m = 1; %override
+     
      mass(j(m),j(m)) = 0;
  end
  

@@ -5,7 +5,7 @@
 %
 % 20180110 GMW
 
-clear all
+clear
 
 tstep = 1; %hours
 
@@ -39,7 +39,7 @@ Met = {...
     'RH'         50;                %Relative Humidity, %
     
     % DILUTION
-    'kdil'          0/86400;        %dilution constant, /s
+    'kdil'          1/86400;        %dilution constant, /s
 %     'tgauss'        -1;...        % initial timescale for Gaussian dilution, s
     
     % PHOTOLYSIS
@@ -58,7 +58,7 @@ Met = {...
     % AEROSOL (ORGANIC)
     'rpaerosol'     0;...           % mean aerosol particle radius, cm
     'Naerosol'      0;...           % aerosol number density, #/cm^3
-    'Saerosol'      0;...           % mean aerosol particle surface area concentration cm^2/cm^3
+    'Saerosol'      1e-6;...           % mean aerosol particle surface area concentration cm^2/cm^3
     'Vaerosol'      0;...           % mean aerosol particle volume concentration cm^3/cm^3
     
     % AEROSOL (AQUEOUS)
@@ -91,15 +91,27 @@ InitConc = {...
     'CH4'               1900                 1;
     'HCHO'              0.5                  0;
     
+     %Halogens
+    'HOBr'              7/1000               0;
+    'HOI'               3/1000               0;
+    'HCl'               14/1000              0;
+    
     % families
     'NOx'               {'NO','NO2'}        [];
+    'Bry'               {'BrO','Br','HBr','BrNO2','BrNO3','HOBr','2*Br2'}  [];
+    'Iy'                {'I','IO','HI','HOI','OIO','CH3I','INO','INO2','INO3','2*I2','2*I2O4','2*I2O3'}  [];
+    'Cly'               {'ClO','OClO','Cl','HCl','ClNO3','ClOO','HOCl','ClNO2','2*Cl2','2*Cl2O2'} [];
     };
+    
+% Not sure what to do about cross species BrCl, IBr, ICl
 
 %% CHEMISTRY
 ChemFiles = {...
    'MCMv331_K(Met)';
    'MCMv331_J(Met,2)';
    'MCMv331_Methane';
+   'Halogens_Sherwen2016';
+   'HalogenAerosol_Sherwen2016';
    };
 
 %% DILUTION CONCENTRATIONS
@@ -108,12 +120,12 @@ BkgdConc = {'DEFAULT'       0};
 
 %% OPTIONS
 
-ModelOptions.Verbose        = 0;
+ModelOptions.Verbose        = 1;
 ModelOptions.EndPointsOnly  = 1;
 ModelOptions.LinkSteps      = 1;
 ModelOptions.Repeat         = 3;
 ModelOptions.IntTime        = 3600*tstep; %3600 seconds/hour
-% ModelOptions.TimeStamp      = SOAS.Time;
+% ModelOptions.TimeStamp      = time.hour;
 ModelOptions.SavePath       = 'DoNotSave';
 % ModelOptions.FixNOx         = 0;
 

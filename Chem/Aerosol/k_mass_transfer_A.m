@@ -7,7 +7,6 @@
 
 function k=k_mass_transfer_A(rp,Dg,g,w)
 
-
 kmt = ((rp./Dg)+(4./w./g)).^-1; 
 
 k=kmt;

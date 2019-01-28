@@ -9,9 +9,10 @@ function Jac = Jac_eval(t,conc,param)
 % For more info on how it is used, see the odeset help.
 %
 % 20120723 GMW
-% 20180320 GMW Added Gaussian dispersion option.
+% 20180320 GMW  Added Gaussian dispersion option.
+% 20190123 GMW  Added accomodations for family conservation and limiting reagent reactions.
 
-%%%%%BREAKOUT PARAMETERS%%%%%
+%% BREAKOUT PARAMETERS
 k           = param{1};
 f           = param{2};
 iG          = param{3};
@@ -19,16 +20,24 @@ iRO2        = param{4};
 iHold       = param{5};
 kdil        = param{6};
 tgauss      = param{7};
-conc_bkgd   = param{8};
-IntTime     = param{9};
-Verbose     = param{10};
-Family        = param{11};
+% conc_bkgd   = param{8};
+% IntTime     = param{9};
+% Verbose     = param{10};
+Family      = param{11};
+iLR         = param{12};
+% Jac_flag    = param{13};
 
 [nRx,nSp] = size(f);
 
 conc = conc'; %ODE solver feeds this in as 1 row for each species
 
-%%%%%CALCULATE JACOBIAN MATRIX%%%%%
+%% LIMITING REAGENT REACTIONS
+% handle these by identifying limiting reagent and replacing iG for other with 1
+[~,lr] = min([conc(iG(iLR,1));conc(iG(iLR,2))],[],1); %lr is index for iG w/ smallest conc and is wrt iLR
+iG(iLR(lr==1),2) = 1;
+iG(iLR(lr==2),1) = 1;
+
+%% CALCULATE JACOBIAN MATRIX
 
 conc(:,2) = sum(conc(:,iRO2),2); %sum RO2
 
@@ -55,25 +64,75 @@ DratesDy(i2,iG(i2,1)) = 2*DratesDy(i2,iG(i2,1));
 % Units are /s
 Jac = f'*DratesDy;
 
-% add dilution (first-order)
+%% DILUTION
+% treated as first-order
 if ~isinf(tgauss),  dilrate = 1./(tgauss + 2*t); %gaussian dispersion
 else,               dilrate = kdil;              %1st-order dilution
 end
 idg = sub2ind([nSp nSp],3:nSp,3:nSp); %get diagonal indices
 Jac(idg) = Jac(idg) - dilrate;
+        
+%% FAMILY CONSERVATION
 
-% fixed species
+% fic = fi + ni*C*r
+% dfic/dxj = dfi/dxj + r*C*dni/dxj + r*ni*dC/dxj + ni*C*dr/dxj
+% dni/dxj = -sj*si*xi/Fc^2 (all) + si/Fc (i==j only)
+% dC/dxj = -sum(si*dfi/dxj)
+% dr/dxj = -sj*Fi/Fc^2
+
+Fnames = fieldnames(Family);
+
+% get dydt
+if ~isempty(Fnames)
+    param{13} = 1; %Jac_flag
+    dydt = dydt_eval(t,conc',param);
+end
+
+% loop through families
+for i = 1:length(Fnames)
+    
+    % get vars
+    j  = Family.(Fnames{i}).index;
+    s  = Family.(Fnames{i}).scale;
+    Fi = Family.(Fnames{i}).conc; %initial family concentration
+    Fc = sum(conc(j).*s); %current family concentration
+    Jac_F = Jac(j,j);
+
+    % raw correction terms
+    C = -sum(dydt(j).*s); %total family correction
+    n = conc(j).*s./Fc; % apportionment fraction
+    r = Fi/Fc; %additional scaling for reset to init
+    
+    % dndx term
+    sx = conc(j).*s; % 1 x j
+    ssx = s(:)*sx; % j x j
+    sF = diag(s*Fc); % diagonals only
+    dndx = (sF - ssx)./Fc.^2;
+    c1 = dndx.*C.*r;
+    
+    % dCdx term
+    dCdx = -s*Jac_F; % 1 x nSp, applies to all columns
+    c2 = n(:)*dCdx.*r; % j x j
+    
+    % drdx term
+    drdx = -s*Fi/Fc^2; % 1 x j
+    c3 = n(:)*drdx*C; % j x j
+    
+    % put em together
+    Jac_F = Jac_F + c1 + c2 + c3;
+    Jac(j,j) = Jac_F;
+    
+    % OBSOLETE: mass matrix conservation
+%     [~,m] = min(abs(dydt(j)./conc(j))); %member with smallest relative rate of change
+%     m = 1; %override
+    % For algebreic family member, derivative is 1 (or scale) for all family members, 0 otherwise
+%     Jac(j(m),:) = 0; %wipe conserved species
+%     Jac(j(m),j) = Family.(Fnames{i}).scale;
+
+end
+
+%% FIXED SPECIES
 % derivative of a constant is 0
 Jac(iHold,:) = 0;
-
-% family conservation
-% For algebreic family member, derivative is 1 (or scale) for all family members, 0 otherwise
-Fnames = fieldnames(Family);
-for i = 1:length(Fnames)
-    j = Family.(Fnames{i}).index;
-    [~,m] = min(conc(:,j)); %use member with smallest concentration
-    Jac(j(m),:) = 0; %wipe conserved species
-    Jac(j(m),j) = Family.(Fnames{i}).scale;
-end
 
 
