@@ -22,6 +22,9 @@ function dydt = dydt_eval(t,conc,param)
 %           Family.Fn.index: index for species
 %           Family.Fn.scale: scaling value for species (usually 1, maybe 2)
 %           Family.Fn.conc: total family concentration
+%   iLR: index for "limiting reagent" reactions.
+%        dydt for these reactions will be k*min(conc(iG))
+%   Jac_flag: boolean 0/1 indicating if function is being called by Jac_eval.m
 %
 % OUTPUTS:
 % dydt: matrix of rate of change of species, dim = nZ x nSp
@@ -29,8 +32,9 @@ function dydt = dydt_eval(t,conc,param)
 % 20080918 GMW
 % 20120212 GMW  Modified for use with UWCM_v2. See ChangeLog for details.
 % 20180320 GMW  Added Gaussian dispersion option.
+% 20190123 GMW  Added accomodations for family conservation and limiting reagent reactions.
 
-%%%%%BREAKOUT PARAMETERS%%%%%
+%% BREAKOUT PARAMETERS
 k           = param{1};
 f           = param{2};
 iG          = param{3};
@@ -42,6 +46,8 @@ conc_bkgd   = param{8};
 IntTime     = param{9};
 Verbose     = param{10};
 Family      = param{11};
+iLR         = param{12};
+Jac_flag    = param{13};
 
 conc = conc'; %ODE solver feeds this in as 1 row for each species
 
@@ -53,13 +59,19 @@ if s > 1
     k = o*k;
 end
 
-%%%%%CALCULATE RATES%%%%%
+%% LIMITING REAGENT REACTIONS
+% handle these by identifying limiting reagent and replacing iG for other with 1
+[~,lr] = min([conc(iG(iLR,1));conc(iG(iLR,2))],[],1); %lr is index for iG w/ smallest conc and is wrt iLR
+iG(iLR(lr==1),2) = 1;
+iG(iLR(lr==2),1) = 1;
+
+%% CHEMICAL RATES
 conc(:,2) = sum(conc(:,iRO2),2); %calculate sum of RO2 species
 G = conc(:,iG(:,1)).*conc(:,iG(:,2)); %1 column for each reaction
 rates = k.*G; %chemical rates
 dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
 
-%dilution
+%% DILUTION
 if ~isinf(tgauss)
     dilrate = -1./(tgauss + 2*t).*(conc - conc_bkgd); % gaussian dispersion
 else
@@ -67,16 +79,43 @@ else
 end
 dydt = dydt + dilrate;
 
-% family conservation (algebraic equation replacement)
+%% STOP HERE IF USING INSIDE JACOBIAN
+if Jac_flag
+    return
+end
+
+%% FAMILY CONSERVATION
 Fnames = fieldnames(Family);
 for i = 1:length(Fnames)
-    j = Family.(Fnames{i}).index;
-    [~,m] = min(conc(:,j)); % choose member with lowest concentration 
     
-    % matrix multiplication perform summation and scaling
-    % note, scale is normally 1
-    dydt(:,j(m)) = conc(:,j)*Family.(Fnames{i}).scale(:) - Family.(Fnames{i}).conc;
+    % get vars
+    j = Family.(Fnames{i}).index;
+    s = Family.(Fnames{i}).scale;
+    Ft = Family.(Fnames{i}).conc; %true family concentration
+    Fc = sum(conc(:,j).*s,2); %current family concentration
+    
+    if 0
+        % patch leaks directly
+        C = -sum(dydt(:,j).*s,2); %total correction term
+        n = conc(:,j).*s./Fc; %fraction for each member
+        
+        dydt(:,j) = dydt(:,j) + n.*C;
+        
+        % combo with mass matrix?
+%         m = 1; %constant
+%         dydt(:,j(m)) = Fc - Ft;
+    
+    else
+        % mass matrix conservation
+        % algebraic equation replacement
+%         [~,m] = max(conc(j).*s);
+        m = 1; %constant
+        dydt(:,j(m)) = Fc - Ft;
+    end
+    
 end
+
+%% FINAL BITS
 
 % no change for held species
 dydt(:,iHold) = 0; 

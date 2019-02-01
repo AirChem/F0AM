@@ -74,6 +74,7 @@ InitConc = {...
     'PAN'               SOAS.PAN             1;
     'C2H5NO3'           SOAS.C2H5NO3         1;
     'IC3H7NO3'          SOAS.IC3H7NO3        1;
+    'NOx'               {'NO2','NO'}        [];
     
     %Biogenics
     'C5H8'              SOAS.C5H8            1;
@@ -160,7 +161,7 @@ ModelOptions.Repeat         = 3;
 ModelOptions.IntTime        = 3600; %3600 seconds/hour
 ModelOptions.TimeStamp      = SOAS.Time;
 ModelOptions.SavePath       = 'DielExampleOutput';
-ModelOptions.FixNOx         = 1;
+% ModelOptions.FixNOx         = 1;
 
 %% MODEL RUN
 % Now we call the model. Note this may take several minutes to run, depending on your system.

@@ -10,7 +10,7 @@ F0AMv4
 
 Throughout: changed "CAUTION" statements to warnings and tried to standardized warning/error messages
 
-F0AM_ModelCore
+F0AM_ModelCore:
 
     NEW family constraints
         Added ability to conserve total concentration of a family of species (e.g. NOx).
@@ -48,7 +48,15 @@ Hybrid J-values:
  - Added calc_HybridJtables.m and TUV_ActFlux_tables.mat to \Chem\Photolysis\ so that users can generate their own HybridJtables.mat if needed.
    Also added procedure in F0AM_UserManual.
 
-New Functions
+Sherwen 2016 Mechanism:
+    New mechanism for GEOSChem halogen scheme as implemented by Romer et al. (2018) for MCMv331.
+    Mechanism files located in \Chem\MCMv331\SubMechanisms\Sherwen2016.
+    This mechanism is not complete and has some tunable parameters buried in it, so it should be used with caution.
+    To accomodate this, also added 14 new J-values to J_BottomUp.m and hybrid tables.
+    Also also, added a few bits to InitializeChemistry, dydt_eval, Jac_eval, and F0AM_ModelCore
+    to handle the special "limiting reagent" aerosol reactions.
+
+New Functions:
 
     F0AM_benchmark: setup script to evaluate performance when monkeying with model guts.
         Still needs work for standardization.

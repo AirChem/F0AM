@@ -1,5 +1,5 @@
-function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,firstCall)
-% function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,ChemFiles,ModelOptions,FirstCall)
+function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(Met,ChemFiles,ModelOptions,firstCall)
+% function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(Met,ChemFiles,ModelOptions,FirstCall)
 % Generates parameters for calculating time rate of change of chemical species
 % used in the dydt_eval function.
 %
@@ -32,6 +32,7 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,C
 % iRO2: 1-column index of RO2 species locations.
 % jcorr: generic scaling factor for un-constrained j-values
 % jcorr_all: matrix of scaling factors for all J-values.
+% iLR:  1-column index for "limiting reagent" reactions.
 % 
 % 20120713 GMW
 % 20131022 GMW  Modified for UWCMv2.2 to accomodate Met input as structure
@@ -46,8 +47,9 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all] = InitializeChemistry(Met,C
 % 20150913 GMW  Added line in j-correction code to set jcorr to 1 if SZA>=90.
 %               This prevents issues when feeding in nighttime j-value data.
 % 20160304 GMW  Modified to accept J, K function outputs as structures.
+% 20190123 GMW  Added iLR output
 
-%%%%% INITIALIZE VARIABLES %%%%%
+%% INITIALIZE VARIABLES
 struct2var(Met)
 struct2var(ModelOptions)
 Mnames = fieldnames(Met);
@@ -62,18 +64,19 @@ k        = zeros(nIc,nRx); %reaction rate constant matrix
 Gstr     = cell(nRx,2);    %cell array to collect reactant names
 Cnames   = cell(nSp,1);    %cell array of species names
 RO2names = cell(nSp,1);    %cell array of RO2 names
+lr_flag  = zeros(nRx,1);   %boolean flag for "limiting reagent" reactions
 
 SpeciesToAdd = {'ONE';'RO2'}; %Placeholder species
 AddSpecies
 
-%%%%% GENERIC RATE CONSTANTS %%%%%
+%% GENERIC RATE CONSTANTS
 % assume first input in ChemFiles is a function for rate constants
 if ~isempty(ChemFiles{1})
     K = eval(ChemFiles{1});
     struct2var(K);
 end
 
-%%%%% PHOTOLYSIS FREQUENCIES %%%%%
+%% PHOTOLYSIS FREQUENCIES
 % assume second input in ChemFiles is a function for J-values
 if ~isempty(ChemFiles{2})
      J = eval(ChemFiles{2});
@@ -109,13 +112,13 @@ if ~isempty(ChemFiles{2})
     breakout(jval,Jnames); %create variables in workspace
 end
 
-%%%%% ACCUMULATE CHEMISTRY %%%%%
+%% ACCUMULATE CHEMISTRY
 i=0; %index for adding reactions
 for j=3:length(ChemFiles)
     eval(ChemFiles{j});
 end
 
-%%%%% CLEAN UP %%%%%
+%% CLEAN UP
 iC = ~cellfun('isempty',Cnames); %flag non-empty cells
 Cnames = Cnames(iC);
 
@@ -127,6 +130,8 @@ eval(['f=sparse([' fstr ']);']); %concatenate coefficient vectors
 f = f(1:i,:);
 Rnames = Rnames(1:i);
 k = k(:,1:i);
+
+iLR = find(lr_flag); %index
 
 Gstr = Gstr(1:i,:);
 iempty = cellfun('isempty',Gstr);
@@ -145,7 +150,7 @@ if sum(iC)>nSp
         'Consider revising parameter nRx in InitializeChemistry.m.'],nRx,sum(iR));
 end
 
-%%%%% CHECK FOR DUPLICATE REACTIONS %%%%%
+%% CHECK FOR DUPLICATE REACTIONS
 if nargin<4 || firstCall
     [repRx,~,POS,IR] = repval(Rnames); %get repeated reaction names
     notRep=false(size(repRx));

@@ -1,11 +1,14 @@
-function calc_HybridJtables(test_flag)
-% function calc_HybridJtables(test_flag)
+function calc_HybridJtables(test_flag,par_flag)
+% function calc_HybridJtables(test_flag,par_flag)
 % Generates "HybridJtables.mat", which is a set of lookup tables for F0AM J-values.
 % Calculation uses TUV-derived solar spectra and CS/QY info from IUPAC/JPL.
 %
 % Setting test_flag to 1 is recommended if changes are made to J_BottomUp.m.
 % This will calculate J's for a single solar cycle and generate an inspection plot
 % but will not save outputs.
+%
+% Setting par_flag to 1 while attempt to speed up code using the parallelization.
+% MATLAB's Parallel Computing Toolbox must be present for this to work.
 %
 % Clear-sky TUVv5.2 solar spectra were calculated with the following inputs:
 %   SZA         0:5:90      degrees
@@ -28,10 +31,32 @@ function calc_HybridJtables(test_flag)
 % 20190117 GMW  Repackaged for general consumption.
 %               Replaced old Met profiles (lapse rate = 9.8 K/km) with true US Standard Atmosphere.
 %               Added test case and plot code.
+% 20190123 GMW  Added parallelization option.
 
-if nargin==0, test_flag = 0; end
+%% DEFAULTS
+if nargin<1, test_flag = 0; end
+if nargin<2, par_flag = 0; end
 
-%% LOAD ACTINIC FLUXES
+%% INITIALIZE PARALLELIZATION
+
+if par_flag
+    
+    %check
+    if ~exist('parfor','builtin') %check
+        
+        warning('calc_HybridJtables:MissingToolbox',...
+            'Parallel computing toolbox not found. Will loop serially.')
+        par_flag = 0;
+        
+    elseif isempty(gcp('nocreate')) % initialize parpool if needed
+        
+        pID = parcluster;
+        parpool(pID,pID.NumWorkers);
+        
+    end
+end
+
+%% LOAD INPUTS
 
 load('TUV_ActFlux_tables.mat','ActFlux','ALT','SZA','O3col','albedo') %generated with calc_TUV_ActFlux_tables.m 
 
@@ -58,29 +83,45 @@ Ls = length(SZA);
 Lb = length(albedo);
 Lo = length(O3col);
 
-%% METEOROLOGY
+% METEOROLOGY
 % uses U.S. Standard Atmosphere (see Wikipedia)
-
 [T,P] = USatmos(ALT);
 
 %% CALCULATE J-VALUES
 
 LFlux = ActFlux{1,1,1}(:,1:2); %initial spectrum
+wl = LFlux(:,1); %wavelengths, same for all spectra
 Jnow = J_BottomUp(LFlux,300,760); %get Jnames
 Jnames = fieldnames(Jnow);
 nJ = length(Jnames);
 Jall = nan(Ls*La*Lb*Lo,nJ);
-n=1; %tracker for where to stash output in Jall
 for i=1:La
+    Ti = T(i);
+    Pi = P(i);
     for j=1:Lo
         for k=1:Lb
             fprintf('ActFlux %d of %d\n',k+(j-1)*Lb+(i-1)*Lo*Lb,La*Lo*Lb)
-            for m=1:Ls
-                LFlux(:,2) = ActFlux{i,j,k}(:,m+1);
-                Jnow = J_BottomUp(LFlux,T(i),P(i));
-                Jall(n,:) = breakin(Jnow); %temporary matrix for accumulation
-                n = n + 1;
+            
+            photons = ActFlux{i,j,k}(:,2:end); %spectra
+            Jpar = cell(Ls,1); %temporary holding cell array
+            
+            if par_flag
+                parfor m=1:Ls
+                    LFlux = [wl photons(:,m)];
+                    Jnow = J_BottomUp(LFlux,Ti,Pi);
+                    Jpar{m} = breakin(Jnow);
+                end
+            else
+                for m=1:Ls
+                    LFlux = [wl photons(:,m)];
+                    Jnow = J_BottomUp(LFlux,Ti,Pi);
+                    Jpar{m} = breakin(Jnow);
+                end
             end
+            
+            n = (1:Ls) + (k-1)*Ls + (j-1)*Lb*Ls + (i-1)*Lo*Lb*Ls; %index for where to stuff it
+            Jall(n,:) = cell2mat(Jpar);
+            
         end
     end
 end
@@ -101,10 +142,12 @@ if test_flag %plot
     % plot normalized J values in groups of 10
     nline = 10;
     nfig = ceil(nJ/nline);
+    whichfig = sort(repmat((1:nfig)',nline,1)); %figure index
+    whichfig = whichfig(1:nJ);
     for i = 1:nfig
         
-        % get values to plot
-        k = (i-1)*nline + (1:nline);
+        % get values
+        k = whichfig==i;
         Jn = Jnames(k);
         Jp = Jall(:,k);
         Jpmax = Jp(noon,:); 
@@ -112,7 +155,7 @@ if test_flag %plot
         
         % build legend
         Jpmax_str = num2str(Jpmax(:),'%2.1E');
-        for m = 1:nline
+        for m = 1:sum(k)
             Jn{m} = [Jn{m} ' (' Jpmax_str(m,:) '/s)'];
         end
         
@@ -138,7 +181,7 @@ if test_flag %plot
         xlabel('SZA/deg')
         ylabel('J/J_0 (J_0 in legend)')
         legend(Jn,'location','southwest')
-        title(['calc HybridJtables, J# ' num2str(k(1)) ':' num2str(k(end))])
+        title('calc HybridJtables')
         xlim([0 91])
         ylim([0 1.01])
         

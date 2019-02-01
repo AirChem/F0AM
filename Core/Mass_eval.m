@@ -1,4 +1,4 @@
-function mass = Mass_eval(~,conc,param)
+function mass = Mass_eval(t,conc,param)
 % function mass = Mass_eval(t,conc,param)
 % Calculates mass matrix for use with ODE solver.
 % Specifically useful for family conservation.
@@ -9,19 +9,40 @@ function mass = Mass_eval(~,conc,param)
 %
 % 20190115 GMW
         
-%%%%%BREAKOUT PARAMETERS%%%%%
-Family        = param{11};
+%% BREAKOUT PARAMETERS
+% k           = param{1};
+% f           = param{2};
+% iG          = param{3};
+% iRO2        = param{4};
+% iHold       = param{5};
+% kdil        = param{6};
+% tgauss      = param{7};
+% conc_bkgd   = param{8};
+% IntTime     = param{9};
+% Verbose     = param{10};
+Family      = param{11};
+% iLR         = param{12};
 
-%initialize
+%% initialize
 nSp = length(conc);
 mass = speye(nSp); 
+% conc = conc';
  
- % family conservation
- % choose member with lowest concentration for family conservation 
+ %% family conservation
  Fnames = fieldnames(Family);
+ 
+ % get dydt
+% if ~isempty(Fnames)
+%     param{13} = 1; %Jac_flag
+%     dydt = dydt_eval(t,conc',param);
+% end
+
  for i = length(Fnames)
      j = Family.(Fnames{i}).index;
-     [~,m] = min(conc(j));
+     
+%      [~,m] = max(conc(j).*Family.(Fnames{i}).scale);
+     m = 1; %constant
+     
      mass(j(m),j(m)) = 0;
  end
  
