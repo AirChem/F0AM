@@ -103,10 +103,17 @@ for h = 1:nSolar
         conc_init_step = conc_init;
     end
     
-    % get total family concentrations to conserve
+    % family init
     Fnames = fieldnames(Chem.Family);
     for i = 1:length(Fnames)
-        Chem.Family.(Fnames{i}).conc = sum(conc_init(Chem.Family.(Fnames{i}).index).*Chem.Family.(Fnames{i}).scale);
+        j = Chem.Family.(Fnames{i}).index;
+        s = Chem.Family.(Fnames{i}).scale;
+        
+        % total family conc to conserve
+        Chem.Family.(Fnames{i}).conc = sum(conc_init(j).*s); 
+        
+        % determine partitioning using current conditions
+        conc_init_step(j) = Chem.Family.(Fnames{i}).conc .* s.*conc_init_step(j)./sum(conc_init_step(j).*s);
     end
     
     %%%%% CALL ODE SOLVER %%%%%
@@ -126,15 +133,16 @@ for h = 1:nSolar
         0,... %Jac_flag
         };
     
-    %Jacobian speeds integration
-    options = odeset('Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param));
     options = odeset;
     
-    % mass matrix for family treatment
-%     options = odeset(options,...
-%         'Mass',@(t,conc_out) Mass_eval(t,conc_out,param),...
-%         'InitialSlope',dydt_eval(0,conc_init_step',param));
+    %Jacobian speeds integration
+    options = odeset(options,'Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param));
     
+    % mass matrix for family treatment
+    options = odeset(options,'Mass',@(t,conc_out) Mass_eval(t,conc_out,param));
+    options = odeset(options,'InitialSlope',dydt_eval(0,conc_init_step',param));
+%     options = odeset(options,'MStateDependence','strong');
+
     % call ode solver
     [time_out,conc_out] = ode15s(@(t,conc_out) dydt_eval(t,conc_out,param),...
         [0 ModelOptions.IntTime],conc_init_step',options);
@@ -181,7 +189,7 @@ end
 
 if ModelOptions.Verbose>=1
     dt = datestr(toc/86400,'HH:MM:SS');
-    fprintf('  Step %u time: %s\n',i,dt)
+    fprintf('  Step %u time: %s\n',istep,dt)
 end
 
 

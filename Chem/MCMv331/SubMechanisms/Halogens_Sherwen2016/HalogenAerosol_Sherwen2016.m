@@ -72,14 +72,14 @@ Rnames{i} = 'INO3 + Aer = 0.85*ICl + 0.15*IBr + HNO3';
 MW = 188.909;
 k(:,i) = kmt(MW,T,gamma_INO3,Saerosol);
 Gstr{i,1} = 'INO3';
-fINO3(i) = -1; fHNO3(i) = 1; fICl(i) = 0.85; fBr(i) = 0.15;
+fINO3(i) = -1; fHNO3(i) = 1; fICl(i) = 0.85; fIBr(i) = 0.15;
 
 i = i + 1; %R7
 Rnames{i} = 'INO2 + Aer = 0.85*ICl + 0.15*IBr + HNO3';
 MW = 172.91;
 k(:,i) = kmt(MW,T,gamma_INO2,Saerosol);
 Gstr{i,1} = 'INO2';
-fINO3(i) = -1;  fHNO3(i) = 1; fICl(i) = 0.85; fIBr(i) = 0.15; 
+fINO2(i) = -1;  fHNO3(i) = 1; fICl(i) = 0.85; fIBr(i) = 0.15; 
 
 i = i + 1; %R10
 Rnames{i} = 'HOI + Aer = 0.85*ICl + 0.15*IBr';

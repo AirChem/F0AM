@@ -86,7 +86,7 @@ InitConc = {...
     'HO2'               0.02                 0;
     'H2O2'              0.1                  0;
     'CO'                100                  1;
-    'NO'                0                    0;
+    'NO'                0.0                  0;
     'NO2'               0.5                  0;
     'CH4'               1900                 1;
     'HCHO'              0.5                  0;
@@ -97,13 +97,13 @@ InitConc = {...
     'HCl'               14/1000              0;
     
     % families
-    'NOx'               {'NO','NO2'}        [];
-    'Bry'               {'BrO','Br','HBr','BrNO2','BrNO3','HOBr','2*Br2'}  [];
-    'Iy'                {'I','IO','HI','HOI','OIO','CH3I','INO','INO2','INO3','2*I2','2*I2O4','2*I2O3'}  [];
-    'Cly'               {'ClO','OClO','Cl','HCl','ClNO3','ClOO','HOCl','ClNO2','2*Cl2','2*Cl2O2'} [];
+    'NOx'               {'NO2','NO'}        [];
+    'Bry'               {'HOBr','HBr','BrO','Br','BrNO2','BrNO3','2*Br2'}  [];
+%     'Iy'                {'HOI','I','IO','HI','OIO','CH3I','INO','INO2','INO3','2*I2','2*I2O4','2*I2O3'}  [];
+%     'Cly'               {'HCl','ClO','OClO','Cl','ClNO3','ClOO','HOCl','ClNO2','2*Cl2','2*Cl2O2'} [];
     };
     
-% Not sure what to do about cross species BrCl, IBr, ICl
+% missing BrCl, IBr, ICl
 
 %% CHEMISTRY
 ChemFiles = {...
@@ -111,7 +111,7 @@ ChemFiles = {...
    'MCMv331_J(Met,2)';
    'MCMv331_Methane';
    'Halogens_Sherwen2016';
-   'HalogenAerosol_Sherwen2016';
+%    'HalogenAerosol_Sherwen2016';
    };
 
 %% DILUTION CONCENTRATIONS
@@ -147,4 +147,20 @@ if 0
     fprintf('Benchmark ratio = %2.1f\n',dt_f0am./dt_bench)
 end
 
+%% family plot
 
+x = breakin(S.Conc);
+
+fy = 'NOx';
+NOx = sum(x(:,S.Chem.Family.(fy).index).*S.Chem.Family.(fy).scale,2)*1000;
+figure;plot(S.Time/3600,NOx - 500,'k')
+legend('NOx delta (ppt)')
+
+fy = 'Cly';
+Cly = sum(x(:,S.Chem.Family.(fy).index).*S.Chem.Family.(fy).scale,2)*1000;
+fy = 'Bry';
+Bry = sum(x(:,S.Chem.Family.(fy).index).*S.Chem.Family.(fy).scale,2)*1000;
+fy = 'Iy';
+Iy = sum(x(:,S.Chem.Family.(fy).index).*S.Chem.Family.(fy).scale,2)*1000;
+figure;plot(S.Time,Cly - 14,'g-',S.Time,Bry - 7,'r-',S.Time,Iy - 3,'b')
+legend('Cly','Bry','Iy')

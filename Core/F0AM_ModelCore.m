@@ -310,23 +310,30 @@ for i = 1:length(Fnames)
             Fnames{i})
     end
     
-    % check against other families
-    if i ~= length(Fnames)
-        for j = (i+1) : length(Fnames)
-            tf = ismember(names,Family.(Fnames{j}).names);
-            if any(tf)
-                error('F0AM_ModelCore:InvalidInput',...
-                    ['Families %s and %s contain the same member. '...
-                    'A chemical species can only be a member of one family.'],...
-                    Fnames{i},Fnames{j})
-            end
-        end
+    % check for duplicates 
+    if length(names) ~= length(unique(names))
+        error('F0AM_ModelCore:DuplicateInput',...
+            'Family "%s" contains duplicate members.',Fnames{i})
     end
+    
+    % check against other families
+    % 20190128 GMW  doesn't seem to be problematic, commented out for now
+%     if i ~= length(Fnames)
+%         for j = (i+1) : length(Fnames)
+%             tf = ismember(names,Family.(Fnames{j}).names);
+%             if any(tf)
+%                 error('F0AM_ModelCore:InvalidInput',...
+%                     ['Families %s and %s contain the same member. '...
+%                     'A chemical species can only be a member of one family.'],...
+%                     Fnames{i},Fnames{j})
+%             end
+%         end
+%     end
     
     % locate members in Cnames list
     [tf,index] = ismember(names,Cnames);
     if any(~tf)
-        missing = names(find(~tf,1,'first'));
+        missing = names{find(~tf,1,'first')};
         error('F0AM_ModelCore:InvalidInput',...
             'Family member %s:%s not found in ChemFiles species list.',...
             Fnames{i},missing)
