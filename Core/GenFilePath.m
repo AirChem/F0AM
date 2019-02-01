@@ -13,20 +13,24 @@ function validPath = GenFilePath(myPath)
 % OUTPUT, validPath, is the full valid path including directory and filename.
 %
 % 20131019 GMW
+% 20190130 GMW  Minor change to defaultPath creation to avoid missing path errors.
 
-%default directory
-if 0
-    defaultPath = cd; %use current directory as default
-else
-    defaultPath = mfilename('fullpath'); %use Runs subfolder as default
-    defaultPath = [defaultPath(1:end-16) 'Runs'];
+% use \Runs as default
+defaultPath = fileparts(mfilename('fullpath')); %path for this file (in \Core)
+defaultPath = [defaultPath(1:end-4) 'Runs'];
+if ~isdir(defaultPath)
+    warning('GenFilePath:MissingDirectory',...
+        'Cannot find \Runs\ in F0AM directory. Fret not, I fix it.')
+    mkdir(defaultPath)
 end
 
 %directory
-[pathstr name ext] = fileparts(myPath);
+[pathstr, name, ext] = fileparts(myPath);
 if isempty(pathstr)
     pathstr = defaultPath;
-elseif ~exist(pathstr,'dir')
+end
+
+if ~exist(pathstr,'dir')
     disp(['CAUTION: Save directory ' pathstr ' not found.'])
     YN = input('Make new directory? (y/n) [y]:','s');
     if strcmp(YN,'n')

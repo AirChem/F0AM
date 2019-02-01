@@ -85,26 +85,34 @@ if Jac_flag
 end
 
 %% FAMILY CONSERVATION
-% algebraic equation replacement
 Fnames = fieldnames(Family);
 for i = 1:length(Fnames)
     
     % get vars
     j = Family.(Fnames{i}).index;
     s = Family.(Fnames{i}).scale;
-    Fi = Family.(Fnames{i}).conc; %initial family concentration
+    Ft = Family.(Fnames{i}).conc; %true family concentration
     Fc = sum(conc(:,j).*s,2); %current family concentration
     
-    % patch leaks directly
-    C = -sum(dydt(:,j).*s,2); %total correction term
-    n = conc(:,j).*s./Fc; %fraction for each member
-    r = Fi./Fc; %additional scaling for reset to init
-    dydt(:,j) = dydt(:,j) + n.*C.*r;
+    if 0
+        % patch leaks directly
+        C = -sum(dydt(:,j).*s,2); %total correction term
+        n = conc(:,j).*s./Fc; %fraction for each member
+        
+        dydt(:,j) = dydt(:,j) + n.*C;
+        
+        % combo with mass matrix?
+%         m = 1; %constant
+%         dydt(:,j(m)) = Fc - Ft;
     
-    % OBSOLETE: mass matrix conservation
-%     [~,m] = min(conc(j).*Family.(Fnames{i}).scale); % choose member with smallest concentration
-%     m = 1; %override
-%     dydt(:,j(m)) = conc(:,j)*s(:) - Family.(Fnames{i}).conc; % matrix multiplication perform summation and scaling
+    else
+        % mass matrix conservation
+        % algebraic equation replacement
+%         [~,m] = max(conc(j).*s);
+        m = 1; %constant
+        dydt(:,j(m)) = Fc - Ft;
+    end
+    
 end
 
 %% FINAL BITS

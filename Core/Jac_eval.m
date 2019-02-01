@@ -82,52 +82,57 @@ Jac(idg) = Jac(idg) - dilrate;
 
 Fnames = fieldnames(Family);
 
-% get dydt
-if ~isempty(Fnames)
-    param{13} = 1; %Jac_flag
-    dydt = dydt_eval(t,conc',param);
-end
-
 % loop through families
 for i = 1:length(Fnames)
     
     % get vars
     j  = Family.(Fnames{i}).index;
     s  = Family.(Fnames{i}).scale;
-    Fi = Family.(Fnames{i}).conc; %initial family concentration
+    Ft = Family.(Fnames{i}).conc; %initial family concentration
     Fc = sum(conc(j).*s); %current family concentration
     Jac_F = Jac(j,j);
 
-    % raw correction terms
-    C = -sum(dydt(j).*s); %total family correction
-    n = conc(j).*s./Fc; % apportionment fraction
-    r = Fi/Fc; %additional scaling for reset to init
-    
-    % dndx term
-    sx = conc(j).*s; % 1 x j
-    ssx = s(:)*sx; % j x j
-    sF = diag(s*Fc); % diagonals only
-    dndx = (sF - ssx)./Fc.^2;
-    c1 = dndx.*C.*r;
-    
-    % dCdx term
-    dCdx = -s*Jac_F; % 1 x nSp, applies to all columns
-    c2 = n(:)*dCdx.*r; % j x j
-    
-    % drdx term
-    drdx = -s*Fi/Fc^2; % 1 x j
-    c3 = n(:)*drdx*C; % j x j
-    
-    % put em together
-    Jac_F = Jac_F + c1 + c2 + c3;
-    Jac(j,j) = Jac_F;
-    
-    % OBSOLETE: mass matrix conservation
-%     [~,m] = min(abs(dydt(j)./conc(j))); %member with smallest relative rate of change
-%     m = 1; %override
-    % For algebreic family member, derivative is 1 (or scale) for all family members, 0 otherwise
-%     Jac(j(m),:) = 0; %wipe conserved species
-%     Jac(j(m),j) = Family.(Fnames{i}).scale;
+    if 0 %patch leak
+        
+        % get dydt
+        if ~isempty(Fnames)
+            param{13} = 1; %Jac_flag
+            dydt = dydt_eval(t,conc',param);
+        end
+        
+        % raw correction terms
+        C = -sum(dydt(j).*s); %total family correction
+        n = conc(j).*s./Fc; % apportionment fraction
+        
+        % dndx term
+        sx = conc(j).*s; % 1 x j
+        ssx = s(:)*sx; % j x j
+        sF = diag(s*Fc); % diagonals only
+        dndx = (sF - ssx)./Fc.^2;
+        c1 = dndx.*C.*r;
+        
+        % dCdx term
+        dCdx = -s*Jac_F; % 1 x j, applies to all columns
+        c2 = n(:)*dCdx.*r; % j x j
+        
+        % put em together
+        Jac_F = Jac_F + c1 + c2;
+        Jac(j,j) = Jac_F;
+        
+        % mass matrix combo
+        % For algebreic family member, derivative is 1 (or scale) for all family members, 0 otherwise
+%         m = 1; %constant
+%         Jac(j(m),:) = 0; %wipe conserved species
+%         Jac(j(m),j) = s;
+        
+    else
+        % mass matrix conservation
+%         [~,m] = max(conc(j).*s);
+        m = 1; %constant
+        % For algebreic family member, derivative is 1 (or scale) for all family members, 0 otherwise
+        Jac(j(m),:) = 0; %wipe conserved species
+        Jac(j(m),j) = Family.(Fnames{i}).scale;
+    end
 
 end
 
