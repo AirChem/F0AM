@@ -47,6 +47,7 @@ SolarParam.lon          = D.GpsLon; %degrees, range -180:180
 SolarParam.alt          = D.PAlt; %meters
 SolarParam.startTime    = [2013*o 6*o 12*o 0*o 0*o D.AOCTimewave]; %year month day hour min sec
 SolarParam.nDays        = 1; %integer. Set to 1 for example, but should probably be longer (3 days or more) to reach steady state
+SolarParam.resetConcDaily = 0; %flag for reinitializing to InitConc every 24 hours
 clear o
 
 %% METEOROLOGY
@@ -204,7 +205,7 @@ ModelOptions.Verbose        = 1; %flag for verbose command window output
 ModelOptions.EndPointsOnly  = 1; %flag for concentration and rate outputs
 ModelOptions.LinkSteps      = 0; %flag for using end-points of one run to initialize next run
 ModelOptions.Repeat         = 1; %number of times to loop through all constraints
-ModelOptions.SavePath       = ['FlightSSoutput_' MECHANISM '_2']; %partial or full path or empty
+ModelOptions.SavePath       = ['FlightSSoutput_' MECHANISM]; %partial or full path or empty
 ModelOptions.TimeStamp      = D.AOCTimewave; %time stamp to overwrite S.Time model output
 ModelOptions.IntTime        = 3600;
 ModelOptions.GoParallel     = 0;

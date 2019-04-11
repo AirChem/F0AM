@@ -3,12 +3,13 @@ function S = Check4NanNeg(S,pickOne)
 % Checks variables in a structure S for NaNs and negative values.
 % If any are found, it returns an error.
 % optional input "pickOne" can be set to 'nan' or 'neg' to only check for one of these.
-% Also forces all non-character fields in the structure to be column vectors.
 %
 % 20131022 GMW
 % 20150602 GMW  added optional input "pickOne".
 % 20151015 GMW  Modified to skip cell array inputs
 % 20160623 GMW  Modified "any" checks near bottom to work on multi-D matrices.
+% 20190411 GMW  Commented out column vectorization bit at the bottom. It breaks SolarParam.startTime
+%               when only one time is input.
 
 Iname = inputname(1);
 Snames = fieldnames(S);
@@ -38,9 +39,9 @@ for i=1:length(Snames)
     elseif NEG && any(S.(Snames{i})(:)<0)
         error(['Negative values in variable ' Iname '.' Snames{i}])
     else
-        if ~ischar(S.(Snames{i}))
-            S.(Snames{i}) = S.(Snames{i})(:); %ensure column vector
-        end
+%         if ~ischar(S.(Snames{i})) && isvector(S.(Snames{i}))
+%             S.(Snames{i}) = S.(Snames{i})(:); %ensure column vector
+%         end
     end
 end
 

@@ -96,11 +96,16 @@ for h = 1:nSolar
     end
     
     %%%%% INITIALIZE CONCENTRATIONS %%%%%
-    if ~isempty(conc_last)
+    if isempty(conc_last)
+        conc_init_step = conc_init;
+    else
         conc_init_step = conc_last; %carry over end concs from previous step
         conc_init_step(Chem.iHold) = conc_init(Chem.iHold); % override for held species
-    else
-        conc_init_step = conc_init;
+    end
+    
+    % Solar cycle daily reset option
+    if SolarParam.resetConcDaily && h > 1 && extendTime(h) == ModelOptions.IntTime
+        conc_init_step(Chem.iInit) = conc_init(Chem.iInit);
     end
     
     % family init
@@ -179,8 +184,10 @@ RepIndex  = irep.*ones(size(Time));
         
 if SolarFlag
     SZA_solar = solarMet.SZA;
-    if ModelOptions.EndPointsOnly,  k_solar = k(end,:);
-    else,                           k_solar = k;
+    if ModelOptions.EndPointsOnly
+        k_solar = k(end,:);
+    else
+        k_solar = k;
     end
 else
     SZA_solar = [];

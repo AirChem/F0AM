@@ -1,4 +1,4 @@
-function J = IntegrateJ(CSin,QYin,LFin,T,P,wl_bounds,plotem)
+function [J,wl_out,QY_out,CS_out,LF_out] = IntegrateJ(CSin,QYin,LFin,T,P,wl_bounds,plotem)
 % function J = IntegrateJ(Cross,QYield,LFlux,T,P,wl_bounds,plotem)
 % Explicitly calculates a photolysis frequency by integrating the product of
 % cross section, quantum yield and actinic flux over wavelength.
@@ -9,7 +9,7 @@ function J = IntegrateJ(CSin,QYin,LFin,T,P,wl_bounds,plotem)
 % QYin: quantum yield (unitless) and corresponding wavelength (nm). 
 % LFin: light flux (quanta/cm^2/s/nm) and corresponding wavelength (nm).
 % T: temperature (in K). Can be scalar or 1-D array.
-% P: pressure (in torr). Same size as T.
+% P: pressure (in mbar). Same size as T.
 % wl_bounds: an optional 2-element vector of min and max cutoff wavelengths.
 % plotem: optional flag to plot CS, QY, LF and their product. 0 or 1.
 %
@@ -23,6 +23,10 @@ function J = IntegrateJ(CSin,QYin,LFin,T,P,wl_bounds,plotem)
 %
 % OUTPUTS
 % J: photolysis frequency, /s
+% wl_out: wavelength grid for integration, nm
+% QY_out: gridded quantum yield
+% CS_out: gridded cross section, cm^2
+% LF_out: gridded light flux, quanta/cm^2/s/nm
 %
 % 20120620 WGM      Creation.
 % 20120727 GMW      Modified to work with T and P inputs as arrays.
@@ -39,6 +43,7 @@ function J = IntegrateJ(CSin,QYin,LFin,T,P,wl_bounds,plotem)
 %                     integral-based convolution as done in TUV (better).
 % 20160302 GMW      Modified for vectorized CS/QY functions.
 % 20160425 GMW      Added plotting option.
+% 20190222 GMW      Added *_out outputs.
 
 %% DEAL WITH INPUTS
 nT = length(T);
@@ -115,12 +120,12 @@ for i=1:N
     wll = wllim(i);
     wlu = wllim(i+1);
     
-    if   wlu<min(wl_cs) || wll>max(wl_cs) %skip if outside CS window
-    else CS_out(i) = smear(wl_cs,CS,wll,wlu); %smear function defined below
+    if    wlu<min(wl_cs) || wll>max(wl_cs) %skip if outside CS window
+    else, CS_out(i) = smear(wl_cs,CS,wll,wlu); %smear function defined below
     end
     
-    if   wlu<min(wl_qy) || wll>max(wl_qy) %skip if outside QY window
-    else QY_out(i) = smear(wl_qy,QY,wll,wlu);
+    if    wlu<min(wl_qy) || wll>max(wl_qy) %skip if outside QY window
+    else, QY_out(i) = smear(wl_qy,QY,wll,wlu);
     end
 end
 
