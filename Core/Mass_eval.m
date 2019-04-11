@@ -37,7 +37,7 @@ mass = speye(nSp);
 %     dydt = dydt_eval(t,conc',param);
 % end
 
- for i = length(Fnames)
+ for i = 1:length(Fnames)
      j = Family.(Fnames{i}).index;
      
 %      [~,m] = max(conc(j).*Family.(Fnames{i}).scale);

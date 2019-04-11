@@ -88,7 +88,7 @@ if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end
 if ischar(Met.jcorr), Met.jcorr = {Met.jcorr}; end %convert to cell array for consistency
 if iscellstr(Met.jcorr)
     tf = isfield(Met,Met.jcorr);
-    if any(tf)
+    if any(~tf)
         error('F0AM_ModelCore:MissingInput',...
             'Met.jcorr variable "%s" not found in Met.', Met.jcorr{~tf})
     end
@@ -98,12 +98,13 @@ end
 if nargin==6
     SolarFlag = 1;
     FieldInfo = {...
-        %Valid          %Required       %Default
-        'lat'           1               []  ;...
-        'lon'           1               []  ;...
-        'alt'           1               []  ;...
-        'startTime'     1               []  ;...
-        'nDays'         1               []  ;...
+        %Valid           %Required       %Default
+        'lat'            1               []  ;...
+        'lon'            1               []  ;...
+        'alt'            1               []  ;...
+        'startTime'      1               []  ;...
+        'nDays'          1               []  ;...
+        'resetConcDaily' 0               0   ;...
         };
     SolarParam = CheckStructure(SolarParam,FieldInfo);
     
@@ -131,6 +132,7 @@ else
     SolarParam.alt          = nan;
     SolarParam.startTime    = nan;
     SolarParam.nDays        = nan;
+    SolarParam.resetConcDaily = nan;
 end
 
 %%%%% INITIAL CONCENTRATIONS %%%%%
@@ -242,6 +244,7 @@ if length(lUnq)==2
         end
     end
     SolarParam.nDays = SolarParam.nDays(1);
+    SolarParam.resetConcDaily = SolarParam.resetConcDaily(1);
     
 end
 SolarParam.startTime = datevec(SolarParam.startTime); %convert back from date number
@@ -275,7 +278,8 @@ for i=1:length(iC)
         'InitConc species %s not found in ChemFiles species list.',Inames{i})
     end
 end
-Chem.iHold = iC(holdFlag & isSpecies); %flag for fixed concentrations
+Chem.iHold = iC(holdFlag & isSpecies); %index for fixed concentrations
+Chem.iInit = iC(isSpecies); %flag for initialzed concentrations
 
 conc_init = conc_init.*repmat(Met.M,1,nSp)./1e9; %convert from ppb to molec/cc
 conc_init(:,1) = 1; %ONE is first species

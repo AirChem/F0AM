@@ -22,12 +22,28 @@ function J = J_Hybrid(SZA,ALT,O3col,albedo)
 % 20180118 GMW  Renamed "HybridJvalues.mat" to "HybridJtables.mat."
 %               Regenerated tables using correct US Standard Atmosphere T/P profiles.
 %               Cleaned comments.
+% 20190210 GMW  Added check for interpolation limits
 
 
 SZA(SZA>90)=90;
 
 load('HybridJtables.mat','Jhybrid','SZAhybrid','ALThybrid','O3Chybrid','ALBhybrid')
 
+% check limits
+xnames = {'SZA','ALT','O3col','albedo'};
+ynames = {'SZAhybrid','ALThybrid','O3Chybrid','ALBhybrid'};
+for i = 1:length(xnames)
+    x = eval(xnames{i});
+    y = eval(ynames{i});
+    r = [min(y(:)) max(y(:))];
+    if any(x<r(1) | x>r(2))
+        error('J_Hybrid:RangeExceeded',...
+        ['Met input "%s" exceeds interpolation range of HybridJtables.mat. ' ...
+        'Valid range: %f to %f.'],xnames{i},r(1),r(2));
+    end
+end
+
+% interpolate
 J = struct;
 Jnames = fieldnames(Jhybrid);
 for i=1:length(Jnames)
