@@ -20,6 +20,5 @@ QYield = repmat(QY_300,1,length(T));
 i = wl_qy > 330;
 alpha_300 = 1./(1./QYield - 1./(1-QY1));
 alpha_T = alpha_300.*(1 + 0.05*(wl_qy - 329)*(300 - T')/80);
-QYield(i,:) = 1./(1./(1-QY1(i,:)) + 1./alpha_T(i,:).*repmat(P',sum(i),1)./1013.25); %typo fixed, I think
-% QYield(i,:) = 1./(1-QY1(i,:)) + alpha_T(i,:)*P'/1013.25; %this is the exact JPL 10-6 equation
+QYield(i,:) = 1./(1./(1-QY1(i,:)) + 1./alpha_T(i,:).*repmat(P',sum(i),1)./1013.25); % P converted from mb to atm
 

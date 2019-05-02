@@ -132,7 +132,7 @@ else
     SolarParam.alt          = nan;
     SolarParam.startTime    = nan;
     SolarParam.nDays        = nan;
-    SolarParam.resetConcDaily = nan;
+    SolarParam.resetConcDaily = 0;
 end
 
 %%%%% INITIAL CONCENTRATIONS %%%%%

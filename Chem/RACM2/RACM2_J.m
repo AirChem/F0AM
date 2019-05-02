@@ -29,6 +29,7 @@ function J = RACM2_J(Met,Jmethod)
 % 20150618 SR, MM First Creation
 % 20160224 GMW Updated values for UALD, BALD, KET, HKET, PAA, PAN
 % 20160304 GMW  Changed output from name/value pairs to structure, added Jmethod.
+% 20190501 GMW  Moved hybrid J-value estimation for "MCM" method to MCMv331_J.
 
 % INPUTS
 struct2var(Met)
@@ -44,20 +45,11 @@ switch Jmethod
     case {0,'MCM'}
         Jmcm = MCMv331_J(Met,'MCM');
         
-        % also need hybrid values for non-MCM species
-        % override Met inputs to match hybrid and MCM J's (see Fig. 2 in description paper)
-        ALT    = 500*ones(size(SZA)); %meters; 
-        O3col  = 350*ones(size(SZA)); %DU
-        albedo = 0.01*ones(size(SZA)); %unitless
-        Jhyb   = J_Hybrid(SZA,ALT,O3col,albedo);
-        
     case {1,'BOTTOMUP'}
         Jmcm = J_BottomUp(LFlux,T,P);
-        Jhyb = Jmcm; %for name mapping
         
     case {2,'HYBRID'}
         Jmcm = J_Hybrid(SZA,ALT,O3col,albedo);
-        Jhyb = Jmcm; %for name mapping
         
     otherwise
         error(['MCMv331_J: invalid Jmethod "' Jmethod ...
@@ -94,12 +86,12 @@ J.JOP2       = Jmcm.J41;
 J.JONIT      = Jmcm.J54; %not clear from Goliff (2013) which nitrate to use
 
 % NO DIRECT MCM ANALOGUES
-J.JUALD      = Jhyb.Jn1; %crotonaldehyde
-J.JBALD      = Jhyb.Jn2; %benzaldehyde
-J.JKET       = Jhyb.Jn3; %ketones (based on diethyl ketone)
-J.JHKET      = Jhyb.Jn3; %hydroxy ketone (RACM assumes same as KET)
-J.JPAA       = Jhyb.Jn4; %peroxyacetic acid
-J.JPAN1      = Jhyb.Jn14; %PAN=ACO3+NO2
-J.JPAN2      = Jhyb.Jn15; %PAN=MO2+NO3+CO2
+J.JUALD      = Jmcm.Jn1; %crotonaldehyde
+J.JBALD      = Jmcm.Jn2; %benzaldehyde
+J.JKET       = Jmcm.Jn3; %ketones (based on diethyl ketone)
+J.JHKET      = Jmcm.Jn3; %hydroxy ketone (RACM assumes same as KET)
+J.JPAA       = Jmcm.Jn4; %peroxyacetic acid
+J.JPAN1      = Jmcm.Jn14; %PAN=ACO3+NO2
+J.JPAN2      = Jmcm.Jn15; %PAN=MO2+NO3+CO2
 
 

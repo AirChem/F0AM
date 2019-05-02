@@ -29,6 +29,7 @@ function J = J_BottomUp(LFlux,T,P,J2plot)
 % 20160425 GMW  Added plotting option.
 % 20190122 GMW  Added Jn37 - 50 for Sherwen GEOS-Chem mechanism.
 %               Changed initialization for better memory allocation.
+% 20190501 GMW  Added Jn52 (furfural).
 
 % Initialization
 nj = 200; %overguess number of rate constants
@@ -492,6 +493,14 @@ i = i + 1;
 Jnames{i} = 'Jn51';
 CS{i} = 'Cross_Section_IBr_JPL-2010(2011)_298K_220-600nm(rec).txt';
 QY{i} = 1; %Haven't checked this.
+
+
+%% BIOMASS BURNING GOODIES
+i=i+1;
+Jnames{i} = 'Jn52';  % FURFURAL -> Products...
+CS{i} = 'Cross_Section_FURFURAL.csv';
+QY{i} = 0.5; %based on recommendation from NOAA lab experiments (Coggon, p.comm., 2019)
+% note, Hiraoka and Srinivasan (1968) give much lower QY of 0.005: https://doi.org/10.1063/1.1669411
 
 % end of list
 
