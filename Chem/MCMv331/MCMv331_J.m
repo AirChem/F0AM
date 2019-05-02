@@ -298,6 +298,20 @@ switch Jmethod
             J.(Jnames{i}) = j(:,i);
         end
         
+        % also need values for non-MCM species
+        % use hybrid values with inputs optimized for agreement with MCM J's
+        % (see Fig. 2 in description paper)
+        ALT    = 500*ones(size(SZA)); %meters; 
+        O3col  = 350*ones(size(SZA)); %DU
+        albedo = 0.01*ones(size(SZA)); %unitless
+        Jhyb   = J_Hybrid(SZA,ALT,O3col,albedo);
+        
+        % merge 'em
+        Jhnames = setdiff(fieldnames(Jhyb),Jnames);
+        for i = 1:Jhybnames
+            J.(Jhnames{i}) = Jhyb.(Jhnames{i});
+        end
+          
     case {1,'BOTTOMUP'}
         J = J_BottomUp(LFlux,T,P);
         

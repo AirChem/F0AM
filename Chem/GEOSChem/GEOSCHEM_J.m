@@ -30,6 +30,7 @@ function J = GEOSCHEM_J(Met,Jmethod)
 % 20151108 KRT
 % 20160224 GMW Checked and cleaned.
 % 20160304 GMW  Changed output from name/value pairs to structure, added Jmethod.
+% 20190501 GMW  Moved hybrid J-value estimation for "MCM" method to MCMv331_J.
 
 % INPUTS
 struct2var(Met)
@@ -45,20 +46,11 @@ switch Jmethod
     case {0,'MCM'}
         Jmcm = MCMv331_J(Met,'MCM');
         
-        % also need hybrid values for non-MCM species
-        % override Met inputs to match hybrid and MCM J's (see Fig. 2 in description paper)
-        ALT    = 500*ones(size(SZA)); %meters; 
-        O3col  = 350*ones(size(SZA)); %DU
-        albedo = 0.01*ones(size(SZA)); %unitless
-        Jhyb   = J_Hybrid(SZA,ALT,O3col,albedo);
-        
     case {1,'BOTTOMUP'}
         Jmcm = J_BottomUp(LFlux,T,P);
-        Jhyb = Jmcm; %for name mapping
         
     case {2,'HYBRID'}
         Jmcm = J_Hybrid(SZA,ALT,O3col,albedo);
-        Jhyb = Jmcm; %for name mapping
         
     otherwise
         error(['MCMv331_J: invalid Jmethod "' Jmethod ...
@@ -99,21 +91,21 @@ J.JMVKN       = Jmcm.J56*1.6;
 J.JMACRN      = Jmcm.J56*10;
 
 % NO DIRECT MCM ANALOGUES
-J.JALD2b         = Jhyb.Jn5; % ch3cho; MCM only considers radical channel; FAST JX has QY=0
-J.JACETb         = Jhyb.Jn8; %acetone
-J.JHAC           = Jhyb.Jn10;
-J.JGLYC          = Jhyb.Jn9;
-J.JHNO4          = Jhyb.Jn21 + Jhyb.Jn22;
-J.JN2O5_NO2      = Jhyb.Jn19; % N2O5 --> NO3 + NO2
-J.JN2O5_NO       = Jhyb.Jn20; % N2O5 -> NO3+NO+O, turned off in GC
-J.JPAN           = Jhyb.Jn14 + Jhyb.Jn15; %70/30 quantum yields set in chem file
-J.JMPN           = Jhyb.Jn16 + Jhyb.Jn17; %95/5 quantum yields set in chem file
-J.JBr2           = Jhyb.Jn24;
-J.JBrO           = Jhyb.Jn25; 
-J.JHOBr          = Jhyb.Jn26;
-J.JBrNO2         = Jhyb.Jn27;
-J.JBrNO3_Br      = Jhyb.Jn28;
-J.JBrNO3_BrO     = Jhyb.Jn29;
-J.JCHBr3         = Jhyb.Jn30;
+J.JALD2b         = Jmcm.Jn5; % ch3cho; MCM only considers radical channel; FAST JX has QY=0
+J.JACETb         = Jmcm.Jn8; %acetone
+J.JHAC           = Jmcm.Jn10;
+J.JGLYC          = Jmcm.Jn9;
+J.JHNO4          = Jmcm.Jn21 + Jmcm.Jn22;
+J.JN2O5_NO2      = Jmcm.Jn19; % N2O5 --> NO3 + NO2
+J.JN2O5_NO       = Jmcm.Jn20; % N2O5 -> NO3+NO+O, turned off in GC
+J.JPAN           = Jmcm.Jn14 + Jmcm.Jn15; %70/30 quantum yields set in chem file
+J.JMPN           = Jmcm.Jn16 + Jmcm.Jn17; %95/5 quantum yields set in chem file
+J.JBr2           = Jmcm.Jn24;
+J.JBrO           = Jmcm.Jn25; 
+J.JHOBr          = Jmcm.Jn26;
+J.JBrNO2         = Jmcm.Jn27;
+J.JBrNO3_Br      = Jmcm.Jn28;
+J.JBrNO3_BrO     = Jmcm.Jn29;
+J.JCHBr3         = Jmcm.Jn30;
 
 

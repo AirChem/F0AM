@@ -29,6 +29,7 @@ function J = CB6r2_J(Met,Jmethod)
 % 20150218 MM   Adapted from CB05_J
 % 20150618 GMW  Adapted from script to function
 % 20160304 GMW  Changed output from name/value pairs to structure, added Jmethod.
+% 20190501 GMW  Moved hybrid J-value estimation for "MCM" method to MCMv331_J.
 
 % INPUTS
 struct2var(Met)
@@ -44,20 +45,11 @@ switch Jmethod
     case {0,'MCM'}
         Jmcm = MCMv331_J(Met,'MCM');
         
-        % also need hybrid values for non-MCM species
-        % override Met inputs to match hybrid and MCM J's (see Fig. 2 in description paper)
-        ALT    = 500*ones(size(SZA)); %meters; 
-        O3col  = 350*ones(size(SZA)); %DU
-        albedo = 0.01*ones(size(SZA)); %unitless
-        Jhyb   = J_Hybrid(SZA,ALT,O3col,albedo);
-        
     case {1,'BOTTOMUP'}
         Jmcm = J_BottomUp(LFlux,T,P);
-        Jhyb = Jmcm; %for name mapping
         
     case {2,'HYBRID'}
         Jmcm = J_Hybrid(SZA,ALT,O3col,albedo);
-        Jhyb = Jmcm; %for name mapping
         
     otherwise
         error(['MCMv331_J: invalid Jmethod "' Jmethod ...
@@ -87,11 +79,11 @@ J.JACET       = Jmcm.J21;
 J.JMEK        = Jmcm.J22;
 
 % NO DIRECT MCM ANALOGUES
-J.JN2O5       = Jhyb.Jn19 + Jhyb.Jn20;
-J.JHO2NO2     = Jhyb.Jn21 + Jhyb.Jn22;
-J.JPAN        = Jhyb.Jn14 + Jhyb.Jn15;
-J.JACRO       = Jhyb.Jn11;
-J.JGLYD       = Jhyb.Jn9;
-J.JCRON       = Jhyb.Jn12 + Jhyb.Jn13;
+J.JN2O5       = Jmcm.Jn19 + Jmcm.Jn20;
+J.JHO2NO2     = Jmcm.Jn21 + Jmcm.Jn22;
+J.JPAN        = Jmcm.Jn14 + Jmcm.Jn15;
+J.JACRO       = Jmcm.Jn11;
+J.JGLYD       = Jmcm.Jn9;
+J.JCRON       = Jmcm.Jn12 + Jmcm.Jn13;
 
 

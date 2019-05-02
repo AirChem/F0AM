@@ -56,6 +56,11 @@ Sherwen 2016 Mechanism:
     Also also, added a few bits to InitializeChemistry, dydt_eval, Jac_eval, and F0AM_ModelCore
     to handle the special "limiting reagent" aerosol reactions.
 
+NOAA Biomass burning mechanism:
+    New mechanism for oxidation of a handful of biomass-burning relevant VOC.
+    This not really a sub-mechanism, but rather an extended version of the full MCM.
+    It is not possible to easily separate these b/c of shared reaction products.
+
 New Functions:
 
     F0AM_benchmark: setup script to evaluate performance when monkeying with model guts.
