@@ -21,6 +21,7 @@ function K = GEOSCHEM_K(Met)
 % 20151108 KRT
 % 20160224 GMW  Checked and cleaned.
 % 20160304 GMW  Output changed from name/value pair to structure, input to structure.
+% 20190827 GMW  Fixed typo in K_PRPE_OH
 
 struct2var(Met)
 
@@ -110,7 +111,7 @@ i=i+1;
 Knames{i}   = 'K_PRPE_OH';
 LPL         = 8.0E-27.*(T./300).^(-3.5).*M ;
 HPL         = 3.0E-11.*(T./300).^(-1.0)   ;
-krx(:,i)    = (LPL./(1+LPL./HPL)).*0.5.^(1./(1+(log10(LPL./HPL)).^-2));
+krx(:,i)    = (LPL./(1+LPL./HPL)).*0.5.^(1./(1+(log10(LPL./HPL)).^2)); %typo in exponent (-2 to 2) fixed 20190827 GMW
 
 i=i+1;
 Knames{i}   = 'K_SO2_OH';

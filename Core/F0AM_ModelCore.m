@@ -17,6 +17,19 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 StartTime = now;
 disp('INITIALIZING MODEL...')
 
+% Check for duplicate constraints
+Inames = InitConc(:,1);
+rp = repval(Inames);
+if ~isempty(rp)
+    error('F0AM_ModelCore:InvalidInput','Duplicate InitConc variable %s.',rp{1})
+end
+
+Mnames = Met(:,1);
+rp = repval(Mnames);
+if ~isempty(rp)
+    error('F0AM_ModelCore:InvalidInput','Duplicate Met variable %s.',rp{1})
+end
+
 % convert inputs to structures
 holdFlag = logical(cell2mat(InitConc(:,3)));
 Met      = breakout(Met(:,2),Met(:,1));
@@ -148,6 +161,7 @@ if any(family_flag)
         Family.(Fnames{i}).names = InitConc.(Fnames{i});
     end
     InitConc = rmfield(InitConc,Fnames);
+%     holdFlag(family_flag) = [];
 end
 
 %%%%% CHECK FOR NANS/NEGS AND COLUMNATE %%%%%
