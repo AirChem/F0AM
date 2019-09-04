@@ -4,7 +4,18 @@ Questions? --> Glenn Wolfe, f0am.model@gmail.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-20190108 TO ???
+20190904
+
+Continued work on v4: addition of Convergence criteria
+
+Added options for solar cycle only that force it to run until "true" steady-state is reached.
+Major modifications to F0AM_ModelCore and IntegrateStep.
+
+Also reorganized top sections of F0AM_ModelCore and tweaked ModelOptions.Verbose message levels.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+20190108 TO 20190903
 
 F0AMv4
 

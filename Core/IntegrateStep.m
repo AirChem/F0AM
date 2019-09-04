@@ -1,6 +1,6 @@
-function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
+function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
     IntegrateStep(istep,irep,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
-% function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
+% function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
 %     IntegrateStep(istep,irep,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
 % Performs integration of chemical ODEs for a single set of inputs/constraints.
 %
@@ -26,8 +26,10 @@ function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = ...
 %   RepIndex:   linear index for rep
 %   k_solar:    rate constants used in solar cycle calculation
 %   SZA_solar:  SZA cycle used in solar cycle calculation
+%   days_solar: number of days for a solar cycle step
 %
 % 20180227 GMW
+% 20190828 GMW Added convergence criteria
 
 % print message
 if ModelOptions.Verbose>=1
@@ -51,7 +53,11 @@ if SolarFlag
     
     %%%%% CALCULATE SZA CYCLE %%%%%
     cycleTime  = ModelOptions.IntTime:ModelOptions.IntTime:86400; %cycle for one day
-    extendTime = repmat(cycleTime,1,SolarParam.nDays);
+    if SolarParam.nDays == -1 %converge mode
+        extendTime = cycleTime;
+    else
+        extendTime = repmat(cycleTime,1,SolarParam.nDays);
+    end
     nSolar = length(extendTime);
     
     % sun_position inputs are structures
@@ -86,97 +92,141 @@ end
 
 %% DO INTEGRATION
 
+% ouputs
 Conc = nan(nSolar,nSp); %placeholder only; might get overwritten if output is single-point
 Time = nan(nSolar,1);
 
-for h = 1:nSolar
-    
-    if ModelOptions.Verbose>=2 && SolarFlag
-        fprintf('Solar Cycle %u of %u\n',h,nSolar);
-    end
-    
-    %%%%% INITIALIZE CONCENTRATIONS %%%%%
-    if isempty(conc_last)
-        conc_init_step = conc_init;
-    else
-        conc_init_step = conc_last; %carry over end concs from previous step
-        conc_init_step(Chem.iHold) = conc_init(Chem.iHold); % override for held species
-    end
-    
-    % Solar cycle daily reset option
-    if SolarParam.resetConcDaily && h > 1 && extendTime(h) == ModelOptions.IntTime
-        conc_init_step(Chem.iInit) = conc_init(Chem.iInit);
-    end
-    
-    % family init
-    Fnames = fieldnames(Chem.Family);
-    for i = 1:length(Fnames)
-        j = Chem.Family.(Fnames{i}).index;
-        s = Chem.Family.(Fnames{i}).scale;
-        
-        % total family conc to conserve
-        Chem.Family.(Fnames{i}).conc = sum(conc_init(j).*s); 
-        
-        % determine partitioning using current conditions
-        conc_init_step(j) = Chem.Family.(Fnames{i}).conc .* s.*conc_init_step(j)./sum(conc_init_step(j).*s);
-    end
-    
-    %%%%% CALL ODE SOLVER %%%%%
-    param = {...    %parameters for dydt_eval
-        k(h,:),...
-        Chem.f,...
-        Chem.iG,...
-        Chem.iRO2,...
-        Chem.iHold,...
-        Met.kdil,...
-        Met.tgauss,...
-        conc_bkgd,...
-        ModelOptions.IntTime,...
-        ModelOptions.Verbose,...
-        Chem.Family,...
-        Chem.iLR,...
-        0,... %Jac_flag
-        };
-    
-    options = odeset;
-    
-    %Jacobian speeds integration
-    options = odeset(options,'Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param));
-    
-    % mass matrix for family treatment
-    options = odeset(options,'Mass',@(t,conc_out) Mass_eval(t,conc_out,param));
-    options = odeset(options,'InitialSlope',dydt_eval(0,conc_init_step',param));
-%     options = odeset(options,'MStateDependence','strong');
+% convergence stuff
+converged = 0;
+days_solar = 0; %increments for each loop
+conc_conv_old = conc_init(SolarParam.Converge.iConv);
 
-    % call ode solver
-    [time_out,conc_out] = ode15s(@(t,conc_out) dydt_eval(t,conc_out,param),...
-        [0 ModelOptions.IntTime],conc_init_step',options);
+%loop de loops
+while ~converged
+    days_solar = days_solar + 1;
     
-    %%%%% TIME OFFSETS %%%%%
-    if SolarFlag
-        time_out = time_out + (h-1).*ModelOptions.IntTime;
-    elseif ModelOptions.LinkSteps
-        time_out = time_out + (istep-1).*ModelOptions.IntTime + (irep-1).*nIc.*ModelOptions.IntTime;
+    for h = 1:nSolar
+        
+        if ModelOptions.Verbose>=3 && SolarFlag
+            fprintf('Solar Cycle %u of %u\n',h,nSolar);
+        end
+        
+        %%%%% INITIALIZE CONCENTRATIONS %%%%%
+        if isempty(conc_last) % first solar loop only
+            conc_init_step = conc_init;
+        else
+            conc_init_step = conc_last; %carry over end concs from previous step
+            conc_init_step(Chem.iHold) = conc_init(Chem.iHold); % override for held species
+            % 20190828 GMW: I am not sure why we do this replacement here, as opposed to in
+            % ModelCore before calling IntegrateStep. If somehing is held, then no need to
+            % replace b/w solar steps. Investigate...
+        end
+        
+        % Solar cycle daily reset option
+        if SolarParam.resetConcDaily && h > 1 && extendTime(h) == ModelOptions.IntTime
+            conc_init_step(Chem.iInit) = conc_init(Chem.iInit);
+        end
+        
+        % family init
+        Fnames = fieldnames(Chem.Family);
+        for i = 1:length(Fnames)
+            j = Chem.Family.(Fnames{i}).index;
+            s = Chem.Family.(Fnames{i}).scale;
+            
+            % total family conc to conserve
+            Chem.Family.(Fnames{i}).conc = sum(conc_init(j).*s);
+            
+            % determine partitioning using current conditions
+            conc_init_step(j) = Chem.Family.(Fnames{i}).conc .* s.*conc_init_step(j)./sum(conc_init_step(j).*s);
+        end
+        
+        %%%%% CALL ODE SOLVER %%%%%
+        param = {...    %parameters for dydt_eval
+            k(h,:),...
+            Chem.f,...
+            Chem.iG,...
+            Chem.iRO2,...
+            Chem.iHold,...
+            Met.kdil,...
+            Met.tgauss,...
+            conc_bkgd,...
+            ModelOptions.IntTime,...
+            ModelOptions.Verbose,...
+            Chem.Family,...
+            Chem.iLR,...
+            0,... %Jac_flag
+            };
+        
+        options = odeset;
+        
+        %Jacobian speeds integration
+        options = odeset(options,'Jacobian',@(t,conc_out) Jac_eval(t,conc_out,param));
+        
+        % mass matrix for family treatment
+        options = odeset(options,'Mass',@(t,conc_out) Mass_eval(t,conc_out,param));
+        options = odeset(options,'InitialSlope',dydt_eval(0,conc_init_step',param));
+        %     options = odeset(options,'MStateDependence','strong');
+        
+        % call ode solver
+        [time_out,conc_out] = ode15s(@(t,conc_out) dydt_eval(t,conc_out,param),...
+            [0 ModelOptions.IntTime],conc_init_step',options);
+        
+        %%%%% TIME OFFSETS %%%%%
+        if SolarFlag
+            time_out = time_out + (h-1).*ModelOptions.IntTime;
+        elseif ModelOptions.LinkSteps
+            time_out = time_out + (istep-1).*ModelOptions.IntTime + (irep-1).*nIc.*ModelOptions.IntTime;
+        end
+        
+        %%%%% OUTPUT %%%%%
+        if ModelOptions.EndPointsOnly
+            Conc = conc_out(end,:);
+            Time = time_out(end);
+        elseif SolarFlag
+            % in this case (EndPointsOnly = 0 + Solar cycle), output end of each mini-step
+            Conc(h,:) = conc_out(end,:);
+            Time(h) = time_out(end);
+        else
+            % EndPointsOnly = 0 but not Solar
+            Conc = conc_out;
+            Time = time_out;
+        end
+        
+        % initialize next step if needed
+        conc_last = conc_out(end,:);
+        
+    end %end Solar for-loop
+    
+    %%%%% CHECK FOR CONVERGENCE %%%%%
+    if SolarParam.nDays == -1
+        conc_conv_new = conc_last(SolarParam.Converge.iConv);
+        percent_change = abs(conc_conv_old./conc_conv_new - 1)*100;
+        percent_change(conc_conv_new < 1) = []; %exclude low concentrations
+        
+        if ModelOptions.Verbose>=2
+            fprintf('  Convergence: %u days, %g percent change\n',days_solar,round(max(percent_change),1))
+        end
+        
+        % to stop or not to stop?
+        if isempty(percent_change)
+            converged = 1;
+            warning('IntegrateStep:NoChange','Converge.Species are stuck at 0. Choose some different ones.')
+        elseif all(percent_change < SolarParam.Converge.MaxPctChange) %converged
+            converged = 1;
+        elseif days_solar >= SolarParam.Converge.MaxDays %timeout
+            converged = 1;
+            warning('IntegrateStep:Timeout','Solar cycle failed to converge after %u days.',days_solar)
+        else %keep going
+            conc_conv_old = conc_conv_new;
+        end
+        
+    else %if not using converge criteria
+        converged = 1; %short-circuit while loop if convergence criteria unused
+        days_solar = SolarParam.nDays;
     end
     
-    %%%%% OUTPUT %%%%%
-    if ModelOptions.EndPointsOnly
-        Conc = conc_out(end,:);
-        Time = time_out(end);
-    elseif SolarFlag
-        % in this case (EndPointsOnly = 0 + Solar cycle), output end of each mini-step
-        Conc(h,:) = conc_out(end,:);
-        Time(h) = time_out(end);
-    else
-        % EndPointsOnly = 0 but not Solar
-        Conc = conc_out;
-        Time = time_out;
-    end
-    
-    % initialize next step if needed
-    conc_last = conc_out(end,:);
-    
-end %end Solar for-loop
+end %end convergence while loop
+        
 
 %%%%% OTHER OUTPUTS %%%%%
 StepIndex = istep.*ones(size(Time));
@@ -192,6 +242,7 @@ if SolarFlag
 else
     SZA_solar = [];
     k_solar = [];
+    days_solar = [];
 end
 
 if ModelOptions.Verbose>=1
