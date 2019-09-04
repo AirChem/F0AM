@@ -6,8 +6,9 @@ function [Xbroad,Xslice] = struct2parvar(X)
 % 
 % INPUT X is a structure containing variables of various types.
 %   This function inherently assumes certain things about the fields of X:
-%   1) They are only numeric scalars, arrays, structures, or strings. Cell arrays and sub-structures
-%       are not supported right now.
+%   1) They are only numeric scalars, arrays, structures, or strings.
+%       Cell arrays are not supported right now.
+%       Sub-structures will be broadcast (no slicing of sub-structure fields).
 %   2) All arrays and matrices have the same number of rows.
 %
 % OUTPUTS:
@@ -21,17 +22,17 @@ function [Xbroad,Xslice] = struct2parvar(X)
 % 20180226 GMW
 
 % check for non-supported variable classes
-bad = structfun(@iscell,X) | structfun(@isstruct,X);
+bad = structfun(@iscell,X);
 if any(bad)
     Xnames = fieldnames(X);
     Xbad = Xnames(bad); Xbad = Xbad{1};
     error('struct2parvar:InvalidFieldType',...
-        'Input field %s not a valid class (numerical or string).',Xbad)
+        'Input field %s not a valid class (no cell arrays).',Xbad)
 end
 
 % broadcast vars
 Xnames = fieldnames(X);
-ibd = structfun(@isscalar,X) | structfun(@ischar,X); %flag broadcast vars
+ibd = structfun(@isscalar,X) | structfun(@ischar,X) | structfun(@isstruct,X); %flag broadcast vars
 Xbroad = rmfield(X,Xnames(~ibd)); % broadcast variable structure
 
 % sliced vars

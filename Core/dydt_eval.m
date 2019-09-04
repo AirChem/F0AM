@@ -123,6 +123,6 @@ dydt(:,iHold) = 0;
 dydt = dydt'; %flip it back for ODE solver
 
 % print percent complete
-if Verbose>=3, meter(IntTime,t,10); end
+if Verbose>=4, meter(IntTime,t,10); end
 
 

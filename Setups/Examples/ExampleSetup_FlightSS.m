@@ -41,14 +41,19 @@ This will be used to calculate solar zenith angles vs time of day.
 %}
 
 o = ones(size(D.AOCTimewave));
-
 SolarParam.lat          = D.GpsLat; %degrees, range -90:90
 SolarParam.lon          = D.GpsLon; %degrees, range -180:180
 SolarParam.alt          = D.PAlt; %meters
 SolarParam.startTime    = [2013*o 6*o 12*o 0*o 0*o D.AOCTimewave]; %year month day hour min sec
-SolarParam.nDays        = 1; %integer. Set to 1 for example, but should probably be longer (3 days or more) to reach steady state
+SolarParam.nDays        = 1; %integer. Set to 1 for example, but should probably be longer (3 days or more) to reach steady state.
 SolarParam.resetConcDaily = 0; %flag for reinitializing to InitConc every 24 hours
 clear o
+
+% optional convergence criteria
+% to use this mode, set SolarParam.nDays = -1 above.
+SolarParam.Converge.Species = {'all'};
+SolarParam.Converge.MaxPctChange = 0.1;
+SolarParam.Converge.MaxDays = 20;
 
 %% METEOROLOGY
 %{
@@ -201,7 +206,7 @@ BkgdConc = {...
 "GoParallel" can be used if you have the parallel computing toolbox since steps are independent.
 %}
 
-ModelOptions.Verbose        = 1; %flag for verbose command window output
+ModelOptions.Verbose        = 2; %flag for verbose command window output
 ModelOptions.EndPointsOnly  = 1; %flag for concentration and rate outputs
 ModelOptions.LinkSteps      = 0; %flag for using end-points of one run to initialize next run
 ModelOptions.Repeat         = 1; %number of times to loop through all constraints

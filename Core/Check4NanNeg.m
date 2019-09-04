@@ -10,6 +10,7 @@ function S = Check4NanNeg(S,pickOne)
 % 20160623 GMW  Modified "any" checks near bottom to work on multi-D matrices.
 % 20190411 GMW  Commented out column vectorization bit at the bottom. It breaks SolarParam.startTime
 %               when only one time is input.
+% 20190829 GMW  Added exception for sub-structure fields
 
 Iname = inputname(1);
 Snames = fieldnames(S);
@@ -32,7 +33,7 @@ end
 
 % screen
 for i=1:length(Snames)
-    if iscell(S.(Snames{i}))
+    if iscell(S.(Snames{i})) | isstruct(S.(Snames{i}))
         continue
     elseif NAN && any(isnan(S.(Snames{i})(:)))
         error(['NaNs in variable ' Iname '.' Snames{i}])

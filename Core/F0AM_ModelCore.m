@@ -12,23 +12,12 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 % 20160901 GMW    Work began on v3.2. See Changelog.
 % 20190108 GMW    Work began on v4. See Changelog.
 
-%%   ASSIGN DEFAULTS AND CHECK INPUTS
-
 StartTime = now;
 disp('INITIALIZING MODEL...')
 
-% Check for duplicate constraints
-Inames = InitConc(:,1);
-rp = repval(Inames);
-if ~isempty(rp)
-    error('F0AM_ModelCore:InvalidInput','Duplicate InitConc variable %s.',rp{1})
-end
-
-Mnames = Met(:,1);
-rp = repval(Mnames);
-if ~isempty(rp)
-    error('F0AM_ModelCore:InvalidInput','Duplicate Met variable %s.',rp{1})
-end
+ %suppress stack-trace messages in warnings
+warnstate = warning('query','backtrace');
+warning('off','backtrace')
 
 % convert inputs to structures
 holdFlag = logical(cell2mat(InitConc(:,3)));
@@ -36,7 +25,7 @@ Met      = breakout(Met(:,2),Met(:,1));
 InitConc = breakout(InitConc(:,2),InitConc(:,1));
 BkgdConc = breakout(BkgdConc(:,2),BkgdConc(:,1));
 
-%%%%% MODEL OPTIONS %%%%%
+%% MODELOPTIONS DEFAULTS/CHECKS
 FieldInfo = {...
     %Valid              %Required       %Default
     'IntTime'           1               []  ;...
@@ -73,7 +62,13 @@ if ModelOptions.GoParallel
     end
 end
 
-%%%%% METEOROLOGY %%%%%
+%% MET DEFAULTS/CHECKS
+
+ % check for duplicate constraints
+rp = repval(fieldnames(Met));
+if ~isempty(rp)
+    error('F0AM_ModelCore:InvalidInput','Duplicate Met variable %s.',rp{1})
+end
 
 % special water check
 wata = sum(isfield(Met,{'RH','H2O'}));
@@ -95,7 +90,8 @@ end
 % check other fields
 FieldInfo = InitializeMet;
 Met = CheckStructure(Met,FieldInfo,'J');
-if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end
+if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end % why?
+Met = Check4NanNeg(Met);
 
 % j correction checks
 if ischar(Met.jcorr), Met.jcorr = {Met.jcorr}; end %convert to cell array for consistency
@@ -107,9 +103,20 @@ if iscellstr(Met.jcorr)
     end
 end
 
-%%%%% SOLAR CYCLE PARAMETERS %%%%%
+Mnames = fieldnames(Met);
+
+%% SOLARPARAM DEFAULTS/CHECKS
+
 if nargin==6
     SolarFlag = 1;
+    
+    % throw warning if Convergence options specified but convergence not enabled
+    if all(isfield('SolarParam',{'nDays','Converge'})) && SolarParam.nDays ~= -1
+        warning('F0AM_ModelCore:UnusedInput',...
+            'SolarParam.Converge options specified, but convergence not enabled. Set SolarParam.nDays = -1 to enable.')
+    end
+    
+    % check fields
     FieldInfo = {...
         %Valid           %Required       %Default
         'lat'            1               []  ;...
@@ -118,15 +125,21 @@ if nargin==6
         'startTime'      1               []  ;...
         'nDays'          1               []  ;...
         'resetConcDaily' 0               0   ;...
+        'Converge'       0               struct  ;...
         };
     SolarParam = CheckStructure(SolarParam,FieldInfo);
+    SolarParam = Check4NanNeg(SolarParam,'nan'); %negatives OK (lat/lon)
     
-    if isfield(Met,'SZA')
-        warning('F0AM_ModelCore:UnusedInput',...
-            'Solar cycle enabled. Input Met.SZA will be overwritten.')
-    end
-    
-    %need to get starting SZA for chemistry initialization
+    % convergence criteria
+    FieldInfo = {...
+        %Valid           %Required       %Default
+        'Species'            0          {'all'}  ;...
+        'MaxPctChange'       0              0.1  ;...
+        'MaxDays'            0               10  ;...
+        };
+    SolarParam.Converge = CheckStructure(SolarParam.Converge,FieldInfo);
+        
+    %Get starting SZA for chemistry initialization
     sTime.year = SolarParam.startTime(:,1); sTime.month = SolarParam.startTime(:,2);
     sTime.day  = SolarParam.startTime(:,3); sTime.hour  = SolarParam.startTime(:,4);
     sTime.min  = SolarParam.startTime(:,5); sTime.sec   = SolarParam.startTime(:,6);
@@ -136,6 +149,11 @@ if nargin==6
     location.altitude   = SolarParam.alt;
     sun = sun_position(sTime,location); %zenith and azimuth angles of sun
     sun.zenith(sun.zenith>90) = 90;
+    
+    if isfield(Met,'SZA')
+        warning('F0AM_ModelCore:UnusedInput',...
+            'Solar cycle enabled. Input Met.SZA will be overwritten.')
+    end
     Met.SZA = sun.zenith;
     
 else
@@ -146,9 +164,23 @@ else
     SolarParam.startTime    = nan;
     SolarParam.nDays        = nan;
     SolarParam.resetConcDaily = 0;
+    SolarParam.Converge     = struct;
 end
 
-%%%%% INITIAL CONCENTRATIONS %%%%%
+Snames = fieldnames(SolarParam);
+
+%% INITCONC, BKGDCONC CHECKS
+
+% Check for duplicate constraints
+rp = repval(fieldnames(InitConc));
+if ~isempty(rp)
+    error('F0AM_ModelCore:InvalidInput','Duplicate InitConc variable %s.',rp{1})
+end
+
+rp = repval(fieldnames(BkgdConc));
+if ~isempty(rp)
+    error('F0AM_ModelCore:InvalidInput','Duplicate BkgdConc variable %s.',rp{1})
+end
 
 % remove family info from InitConc if present
 % assumes that cell array in second InitConc input column indicates a family
@@ -164,13 +196,13 @@ if any(family_flag)
 %     holdFlag(family_flag) = [];
 end
 
-%%%%% CHECK FOR NANS/NEGS AND COLUMNATE %%%%%
-Met      = Check4NanNeg(Met);
 InitConc = Check4NanNeg(InitConc);
 BkgdConc = Check4NanNeg(BkgdConc);
-if SolarFlag, SolarParam = Check4NanNeg(SolarParam,'nan'); end
 
-%%%%% CHECK CHEMFILES %%%%%
+Inames = fieldnames(InitConc);
+Bnames = fieldnames(BkgdConc);
+
+%% CHEMFILES CHECKS
 for i=1:length(ChemFiles)
     cfile = ChemFiles{i};
     if isempty(cfile), continue; end
@@ -198,13 +230,7 @@ for i=1:length(ChemFiles)
 end
 Chem.ChemFiles = ChemFiles;
 
-%%%%% GET STRUCTURE NAMES %%%%%
-Mnames = fieldnames(Met);
-Inames = fieldnames(InitConc);
-Bnames = fieldnames(BkgdConc);
-Snames = fieldnames(SolarParam);
-
-%%   EXTEND CONSTRAINTS TO HAVE EQUAL LENGTH
+%% EXTEND CONSTRAINTS TO HAVE EQUAL LENGTH
 
 % This section allows the use of input constraints that are both scalars and arrays.
 % In such a case, all scalars inputs will be assumed to be the same for all runs, 
@@ -252,18 +278,17 @@ if length(lUnq)==2
         end
     end
     
+    Xnames = {'nDays','resetConcDaily','Converge'}; %fields to exclude
     for i=1:length(lSolar)
-        if lSolar(i)==1
+        if lSolar(i)==1 && ~any(strcmp(Snames{i},Xnames))
             SolarParam.(Snames{i}) = repmat(SolarParam.(Snames{i}),lExpand,1);
         end
     end
-    SolarParam.nDays = SolarParam.nDays(1);
-    SolarParam.resetConcDaily = SolarParam.resetConcDaily(1);
     
 end
 SolarParam.startTime = datevec(SolarParam.startTime); %convert back from date number
 
-%%   INITIALIZE METEOROLOGY, CHEMISTRY
+%% INITIALIZE METEOROLOGY, CHEMISTRY
 
 Met.M = NumberDensity(Met.P,Met.T);    %number density, molec/cm^3
 if isempty(Met.H2O)
@@ -280,7 +305,7 @@ nRx = length(Chem.Rnames);  %number of reactions
 nSp = length(Cnames);       %number of species
 nIc = length(Met.T);        %number of input constraints
 
-%%   INITIALIZE CONCENTRATIONS
+%% INITIALIZE CONCENTRATIONS
 
 conc_init = zeros(nIc,nSp);
 [isSpecies,iC] = ismember(Inames,Cnames); %get index for location of Inames in Cnames
@@ -299,7 +324,18 @@ conc_init = conc_init.*repmat(Met.M,1,nSp)./1e9; %convert from ppb to molec/cc
 conc_init(:,1) = 1; %ONE is first species
 conc_init(:,2) = sum(conc_init(:,Chem.iRO2),2); %RO2 is second species
 
-%%   INITIALIZE FAMILIES
+% convergence index
+if length(SolarParam.Converge.Species)==1 && strcmp(SolarParam.Converge.Species{1},'all')
+    SolarParam.Converge.iConv = (1:length(Cnames))';
+else
+    [tf,SolarParam.Converge.iConv] = ismember(SolarParam.Converge.Species,Cnames);
+    if any(~tf)
+        missing = SolarParam.Converge.Species{find(~tf,1,'first')};
+        error('F0AM_ModelCore:InvalidInput','Converge.Species %s not found in ChemFiles species list.',missing)
+    end
+end
+
+%% INITIALIZE FAMILIES
 
 Fnames = fieldnames(Family);
 Chem.Family = struct;
@@ -363,7 +399,7 @@ for i = 1:length(Fnames)
     Chem.Family.(Fnames{i}).scale = scale;
 end
 
-%%   INITIALIZE BACKGROUND CONCENTRATIONS (DILUTION)
+%% INITIALIZE BACKGROUND CONCENTRATIONS (DILUTION)
 
 %%%% DEFAULT VALUES %%%%%
 if isfield(BkgdConc,'DEFAULT') && BkgdConc.DEFAULT(1)==1
@@ -386,7 +422,7 @@ end
 conc_bkgd = conc_bkgd.*repmat(Met.M,1,nSp)./1e9; %convert from ppb to molec/cc
 conc_bkgd(:,1) = 1; %ONE is first species
 
-%%   INTEGRATION
+%% INTEGRATION
 
 % initialize inputs for slicing
 % doing it this way saves overhead for parallel implementation
@@ -394,7 +430,7 @@ conc_bkgd(:,1) = 1; %ONE is first species
 [Mbroad,Mslice] = struct2parvar(Met);
 
 % initialize outputs as cell arrays (will parse/concatenate after run)
-[Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar] = deal(cell(nIc,ModelOptions.Repeat));
+[Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = deal(cell(nIc,ModelOptions.Repeat));
 
 % loop through constraints
 for irep = 1:ModelOptions.Repeat
@@ -413,7 +449,8 @@ for irep = 1:ModelOptions.Repeat
 
         % parallel for-loop
         parfor istep = 1:nIc
-            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},k_solar{istep,irep},SZA_solar{istep,irep}] = ...
+            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
+                k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
                 IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
                 Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
         end
@@ -422,7 +459,8 @@ for irep = 1:ModelOptions.Repeat
         
         % serial for-loop
         for istep = 1:nIc
-            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},k_solar{istep,irep},SZA_solar{istep,irep}] = ...
+            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
+                k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
                 IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
                 Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
             
@@ -442,15 +480,17 @@ StepIndex   = cell2mat(StepIndex(:));
 RepIndex    = cell2mat(RepIndex(:));
 k_solar     = cell2mat(k_solar(:));
 SZA_solar   = cell2mat(SZA_solar(:));
+days_solar  = cell2mat(days_solar(:));
 
 if SolarFlag
     Chem.k = k_solar;
     SolarParam.SZA = SZA_solar;
+    SolarParam.Converge.Days2Converge = days_solar;
 else
     Chem.k = k;
 end
 
-%%   POST-RUN CALCULATIONS
+%% POST-RUN CALCULATIONS
 
 %Chemical rates
 Conc(:,2) = sum(Conc(:,Chem.iRO2),2); %RO2
@@ -497,7 +537,7 @@ if ~isempty(ModelOptions.TimeStamp)
     end
 end
 
-%%   ACCUMULATE VARIABLES INTO STRUCTURE AND SAVE
+%% OUTPUT AND SAVING
 
 %%%%%PUT VARIABLES INTO STRUCTURE%%%%%
 iRO2 = Chem.iRO2; %legacy v3.1. To be removed in the future.
@@ -521,4 +561,7 @@ end
 if ModelOptions.DeclareVictory
     victory
 end
+
+warning(warnstate) %go back to user warning settings
+
 
