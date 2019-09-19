@@ -69,7 +69,7 @@ InitConc = {...
     'H2O2'              SOAS.H2O2            1;
     
     %NOy
-    'NO'                SOAS.NO              0; %FixNOx flag set in options
+    'NO'                SOAS.NO              0;
     'NO2'               SOAS.NO2             0;
     'PAN'               SOAS.PAN             1;
     'C2H5NO3'           SOAS.C2H5NO3         1;
