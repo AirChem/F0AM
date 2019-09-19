@@ -158,13 +158,14 @@ if nargin==6
     
 else
     SolarFlag = 0;
-    SolarParam.lat          = nan;
-    SolarParam.lon          = nan;
-    SolarParam.alt          = nan;
-    SolarParam.startTime    = nan;
-    SolarParam.nDays        = nan;
-    SolarParam.resetConcDaily = 0;
-    SolarParam.Converge     = struct;
+    SolarParam.lat              = nan;
+    SolarParam.lon              = nan;
+    SolarParam.alt              = nan;
+    SolarParam.startTime        = nan;
+    SolarParam.nDays            = nan;
+    SolarParam.resetConcDaily   = 0;
+    SolarParam.Converge         = struct;
+    SolarParam.Converge.Species = {};
 end
 
 Snames = fieldnames(SolarParam);

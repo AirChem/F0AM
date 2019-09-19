@@ -308,7 +308,7 @@ switch Jmethod
         
         % merge 'em
         Jhnames = setdiff(fieldnames(Jhyb),Jnames);
-        for i = 1:Jhybnames
+        for i = 1:length(Jhnames)
             J.(Jhnames{i}) = Jhyb.(Jhnames{i});
         end
           
