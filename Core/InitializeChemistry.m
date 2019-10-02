@@ -154,7 +154,9 @@ end
 if nargin<4 || firstCall
     [repRx,~,POS,IR] = repval(Rnames); %get repeated reaction names
     notRep=false(size(repRx));
-    for j=1:length(repRx) %filter further by rate constants
+    
+    % filter further by rate constants
+    for j=1:length(repRx) 
         repK = k(:,POS(IR==j));
         if isempty(repval(repK'))
             notRep(j)=1;
@@ -162,6 +164,69 @@ if nargin<4 || firstCall
     end
     repRx(notRep)=[];
     
+    % filter for known "duplicate-like" reactions in MCM
+    % these reactions have the same reactants, products, and numerical J-values in the MCM, but are legit separate reactions.
+    Rnames_exc = {
+            'BZEMUCCO2H + hv = C5DIALO2 + HO2'
+            'BZEMUCCO3H + hv = C5DIALO2 + OH'
+            'C3M2COCO2H + hv = CH3COCO2H + CH3CO3 + HO2 + CO'
+            'C3MCOCO2H + hv = HCOCO2H + HO2 + CO + CH3O2 + CO'
+            'C5CO14OH + hv = CH3CO3 + HCOCO2H + HO2 + CO'
+            'C5DIALCO + hv = MALDIALCO3 + CO + HO2'
+            'C5DIALOH + hv = MALDIAL + CO + HO2 + HO2'
+            'C5DIALOOH + hv = MALDIAL + CO + HO2 + OH'
+            'C6125CO + hv = C5CO14O2 + CO + HO2'
+            'C615CO2OH + hv = C5DICARB + CO + HO2 + HO2'
+            'C615CO2OOH + hv = C5DICARB + CO + HO2 + OH'
+            'C6M5CO2OH + hv = C3MDIALOH + CH3CO3 + HO2 + CO'
+            'C6M5CO2OOH + hv = C3MDIALOOH + CH3CO3 + HO2 + CO'
+            'C715CO2OH + hv = C6DICARB + CO + HO2 + HO2'
+            'C7236CO + hv = C5CO14O2 + CH3CO3'
+            'C726CO3OH + hv = CH3CO3 + C5DICARB + HO2'
+            'C726CO5OOH + hv = C726CO5O + OH'
+            'C7M15CO2OH + hv = IC7DICARB + CO + HO2 + HO2'
+            'C815CO2OH + hv = C7DICARB + CO + HO2 + HO2'
+            'C816CO + hv = MACO3 + MEKAO2'
+            'DETLMUO2H + hv = C9M2CO6O2 + HO2'
+            'DETLMUO3H + hv = C9M2CO6O2 + OH'
+            'DMEBMUO2H + hv = C8M2CO6O2 + HO2'
+            'DMEBMUO3H + hv = C8M2CO6O2 + OH'
+            'EBZMUCCO2H + hv = C715CO2O2 + HO2'
+            'EBZMUCCO3H + hv = C715CO2O2 + OH'
+            'IP3ODBCO2H + hv = IPGLYOXOH + HO2 + CO + HO2 + CO'
+            'IPBZMUCO2H + hv = C7M15CO2O2 + HO2'
+            'IPBZMUCO3H + hv = C7M15CO2O2 + OH'
+            'MALDALCO2H + hv = HCOCO2H + HO2 + CO + HO2 + CO'
+            'MC3ODBCO2H + hv = CH3COCO2H + HO2 + CO + HO2 + CO'
+            'MC6CO2OH + hv = C4MCO2OH + HO2 + CO + HO2 + CO'
+            'MC6CO2OOH + hv = C4MCO2OOH + HO2 + CO + HO2 + CO'
+            'MC7CO2OH + hv = MC7CO2O + HO2'
+            'MC7CO2OOH + hv = MC7CO2O + OH'
+            'METLMUCO2H + hv = C826CO3O2 + HO2'
+            'METLMUCO3H + hv = C826CO3O2 + OH'
+            'MXYMUCCO2H + hv = C726CO5O2 + HO2'
+            'MXYMUCCO3H + hv = C726CO5O2 + OH'
+            'OETLMUCO2H + hv = MC7CO2O2 + HO2'
+            'OETLMUCO3H + hv = MC7CO2O2 + OH'
+            'OXYMUCCO2H + hv = MC6CO2O2 + HO2'
+            'OXYMUCCO3H + hv = MC6CO2O2 + OH'
+            'PBZMUCCO2H + hv = C815CO2O2 + HO2'
+            'PBZMUCCO3H + hv = C815CO2O2 + OH'
+            'PC3ODBCO2H + hv = PGLYOXOH + HO2 + CO + HO2 + CO'
+            'PETLMUCO2H + hv = C7M6CO2O2 + HO2'
+            'PETLMUCO3H + hv = C7M6CO2O2 + OH'
+            'PXYMUCCO2H + hv = C6M5CO2O2 + HO2'
+            'PXYMUCCO3H + hv = C6M5CO2O2 + OH'
+            'TLEMUCCO2H + hv = C615CO2O2 + HO2'
+            'TLEMUCCO3H + hv = C615CO2O2 + OH'
+            'TM124MUO2H + hv = EPXM2DCO2H + HO2 + CO + CH3CO3'
+            'TM124MUO3H + hv = EPXM2DCO3H + CH3CO3 + HO2 + CO'
+            'TM135MUO2H + hv = C7M2CO5O2 + HO2'
+            'TM135MUO3H + hv = C7M2CO5O2 + OH'
+            };
+    repRx = setdiff(repRx,Rnames_exc); %removed excepted names from list
+    
+    % warn user of any potential duplicates
     if ~isempty(repRx)
         warning('InitializeChemistry:DuplicateReactions',...
             'Potential duplicate reactions found:')
@@ -169,4 +234,3 @@ if nargin<4 || firstCall
     end
 end
     
-

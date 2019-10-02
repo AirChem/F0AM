@@ -1,4 +1,4 @@
-%F0AM_FireTracers.m
+%FireTracers.m
 % Non-reactive fire emission tracers.
 % 20171211 GMW
 

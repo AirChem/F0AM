@@ -1,5 +1,5 @@
 function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
-    IntegrateStep(istep,irep,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
+    IntegrateStep(istep,irep,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice,t_start)
 % function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
 %     IntegrateStep(istep,irep,nIc,conc_init,conc_last,conc_bkgd,ModelOptions,Chem,k,Sbroad,Sslice,Mbroad,Mslice)
 % Performs integration of chemical ODEs for a single set of inputs/constraints.
@@ -18,6 +18,7 @@ function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
 %   Sslice:         SolarParam sliced variable 1-D array
 %   Mbroad:         Met broadcast variable structure
 %   Mslice:         Met sliced variable 1-D array
+%   t_start:        start time for integration (0, unless linking steps)
 %
 % OUTPUTS (size depends on ModelOptions)
 %   Conc:       matrix of calculated concentrations
@@ -29,7 +30,8 @@ function [Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = ...
 %   days_solar: number of days for a solar cycle step
 %
 % 20180227 GMW
-% 20190828 GMW Added convergence criteria
+% 20190828 GMW  Added convergence criteria
+% 20190930 GMW  Added t_start input
 
 % print message
 if ModelOptions.Verbose>=1
@@ -168,15 +170,17 @@ while ~converged
         %     options = odeset(options,'MStateDependence','strong');
         
         % call ode solver
+        t_span = [0 ModelOptions.IntTime] + t_start;
         [time_out,conc_out] = ode15s(@(t,conc_out) dydt_eval(t,conc_out,param),...
-            [0 ModelOptions.IntTime],conc_init_step',options);
+            t_span,conc_init_step',options);
         
         %%%%% TIME OFFSETS %%%%%
-        if SolarFlag
-            time_out = time_out + (h-1).*ModelOptions.IntTime;
-        elseif ModelOptions.LinkSteps
-            time_out = time_out + (istep-1).*ModelOptions.IntTime + (irep-1).*nIc.*ModelOptions.IntTime;
-        end
+        % 20190930 GMW Might not need this now that t_start is carried around. Consider deletion
+%         if SolarFlag
+%             time_out = time_out + (h-1).*ModelOptions.IntTime;
+%         elseif ModelOptions.LinkSteps
+%             time_out = time_out + (istep-1).*ModelOptions.IntTime + (irep-1).*nIc.*ModelOptions.IntTime;
+%         end
         
         %%%%% OUTPUT %%%%%
         if ModelOptions.EndPointsOnly
@@ -194,6 +198,7 @@ while ~converged
         
         % initialize next step if needed
         conc_last = conc_out(end,:);
+        t_start = time_out(end);
         
     end %end Solar for-loop
     

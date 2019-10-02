@@ -58,7 +58,7 @@ if altFix
 end
 
 % flip if backward trajectory
-if traj.age(2)<0
+if traj.age(3)<0
     traj = structfun(@flipud,traj,'UniformOutput',0);
 end
 
