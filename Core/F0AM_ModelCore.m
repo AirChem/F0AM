@@ -84,7 +84,7 @@ end
 if all(isfield(Met,{'kdil','tgauss'}))
     warning('F0AM_ModelCore:UnusedInput',...
         'kdil and tgauss both specified in Met. kdil takes priority.')
-    Met = rmfield(Met,'tgauss'); %dump it so will initialze with default
+    Met = rmfield(Met,'tgauss'); %dump it so will initialize with default
 end
 
 % check other fields
@@ -442,8 +442,12 @@ for irep = 1:ModelOptions.Repeat
     end
     
     % get last model output for linking Repeat loops if needed
-    if irep==1, conc_last = [];
-    else,       conc_last = Conc{end,irep-1}(end,:);
+    if irep==1
+        conc_last = [];
+        t_start = 0;
+    else
+        conc_last = Conc{end,irep-1}(end,:);
+        t_start = Time{end,irep-1}(end);
     end
         
     if ModelOptions.GoParallel
@@ -453,7 +457,7 @@ for irep = 1:ModelOptions.Repeat
             [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
                 k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
                 IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
-                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
+                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
         end
         
     else
@@ -463,9 +467,12 @@ for irep = 1:ModelOptions.Repeat
             [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
                 k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
                 IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
-                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:));
+                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
             
-            if ModelOptions.LinkSteps, conc_last = Conc{istep,irep}(end,:); end
+            if ModelOptions.LinkSteps
+                conc_last = Conc{istep,irep}(end,:);
+                t_start = Time{istep,irep}(end);
+            end
         end
         
     end  % end for/parfor choice
