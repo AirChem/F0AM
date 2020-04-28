@@ -6,10 +6,13 @@
 %   Because some of the mechanisms use different names for species and J-values, there are some
 %   switch-case statements that would not be needed if doing this with a single mechanism.
 % Read comments in each section for a guided tour.
+%
+% 20200417 GMW Added SAPRC07B
 
 if length(dbstack)==1 %only execute if top-level (skip if called from ExampleSetup_MechCompare.m)
     clear
-    MECHANISM = 'MCMv331'; % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, GEOSCHEM
+    MECHANISM = 'GEOSCHEMv1207';
+    % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, SAPRC07B, GEOSCHEMv902, GEOSCHEMv1207
     makeplots = 1; %flag 0 or 1 for making plots after run
 end
 
@@ -45,14 +48,14 @@ SolarParam.lat          = D.GpsLat; %degrees, range -90:90
 SolarParam.lon          = D.GpsLon; %degrees, range -180:180
 SolarParam.alt          = D.PAlt; %meters
 SolarParam.startTime    = [2013*o 6*o 12*o 0*o 0*o D.AOCTimewave]; %year month day hour min sec
-SolarParam.nDays        = 1; %integer. Set to 1 for example, but should probably be longer (3 days or more) to reach steady state.
+SolarParam.nDays        = 1; % Set to -1 to use convergence or a positive integer for fixed number of days.
 SolarParam.resetConcDaily = 0; %flag for reinitializing to InitConc every 24 hours
 clear o
 
 % optional convergence criteria
 % to use this mode, set SolarParam.nDays = -1 above.
 SolarParam.Converge.Species = {'all'};
-SolarParam.Converge.MaxPctChange = 0.1;
+SolarParam.Converge.MaxPctChange = 1;
 SolarParam.Converge.MaxDays = 20;
 
 %% METEOROLOGY
@@ -69,9 +72,14 @@ jcorr is a scaling factor for non-observed photolysis frequencies. In this case,
 %choose J-value constraint names for specific mechanism
 switch MECHANISM
     case {'MCMv331','MCMv32'}
-        nJNO2 = 'J4'; nJO3 = 'J1';
-    case {'CB05','CB6r2','RACM2','GEOSCHEM'}
-        nJNO2 = 'JNO2'; nJO3 = 'JO1D';
+        nJNO2 = 'J4'; 
+        nJO3 = 'J1';
+    case {'CB05','CB6r2','RACM2','GEOSCHEMv902','GEOSCHEMv1207'}
+        nJNO2 = 'JNO2'; 
+        nJO3 = 'JO1D';
+    case {'SAPRC07B'}
+        nJNO2 = 'JNO2_06';
+        nJO3 = 'JO3O1D_06';
     otherwise
         error(['Invalid mechanism "' mechanism '".'])
 end
@@ -110,12 +118,14 @@ InitConc = {...
     'O3'            D.O3_ppbv                   1;...
     
     'NO'            D.NO_ppbv                   0;...
-    'NO2'           D.NO2_ppbv                  1;...
-    'PAN'           D.PAN_ppbv                  1;...
+    'NO2'           D.NO2_ppbv                  0;...
+    'PAN'           D.PAN_ppbv                  0;...
     
     'CH3OH'         D.methanol_pptv/1000        1;... %long-lived w/ minor secondary sources
     'C5H8'          D.isoprene_pptv/1000        1;...
     'HCHO'          D.HCHO_ppbv                 0;...
+    
+    'NOx'           {'NO','NO2'}                [];... % family conservation
     };
 
 %change names if needed
@@ -125,8 +135,10 @@ switch MECHANISM
         InitConc(8:10,1) = {'MEOH','ISOP','FORM'};
     case 'RACM2'
         InitConc(8:10,1) = {'MOH','ISO','HCHO'};
-    case 'GEOSCHEM'
+    case {'GEOSCHEMv902','GEOSCHEMv1207'}
         InitConc(8:10,1) = {'MOH','ISOP','CH2O'};
+    case 'SAPRC07B'
+        InitConc(8:10,1) = {'MEOH','ISOP','HCHO'};
     otherwise
         error(['Invalid mechanism "' mechanism '".'])
 end
@@ -173,11 +185,23 @@ switch MECHANISM
             'RACM2_J(Met,2)';...
             'RACM2_AllRxns'};
         
-    case 'GEOSCHEM'
+    case 'GEOSCHEMv902'
         ChemFiles = {...
             'GEOSCHEM_K(Met)';...
             'GEOSCHEM_J(Met,2)';...
-            'GEOSCHEM_AllRxns'};
+            'GEOSCHEMv902_AllRxns'};
+        
+    case 'GEOSCHEMv1207'
+        ChemFiles = {...
+            'GEOSCHEM_K(Met)';...
+            'GEOSCHEM_J(Met,2)';...
+            'GEOSCHEMv1207_AllRxns'};
+        
+    case 'SAPRC07B'
+        ChemFiles = {...
+            'SAPRC07_K(Met)';...
+            'SAPRC07_J(Met,2)';...
+            'SAPRC07B_AllRxns'};
         
 end
 
@@ -197,7 +221,6 @@ BkgdConc = {...
   window regarding model progress.
 "EndPointsOnly" is set to 1 because we only want the last point of each step.
 "LinkSteps" is set to 0 because each step uses an independent set of observations.
-"Repeat" is set to 1 to loop through the full set of constraints once.
 "TimeStamp" is set to the dataset independent variable.
 "SavePath" gives the filename only (in this example); the default save directory is the UWCMv3\Runs folder.
 "IntTime" is the integration time for each solar cycle mini-step.
@@ -206,10 +229,9 @@ BkgdConc = {...
 "GoParallel" can be used if you have the parallel computing toolbox since steps are independent.
 %}
 
-ModelOptions.Verbose        = 2; %flag for verbose command window output
+ModelOptions.Verbose        = 3; %flag for verbose command window output
 ModelOptions.EndPointsOnly  = 1; %flag for concentration and rate outputs
 ModelOptions.LinkSteps      = 0; %flag for using end-points of one run to initialize next run
-ModelOptions.Repeat         = 1; %number of times to loop through all constraints
 ModelOptions.SavePath       = ['FlightSSoutput_' MECHANISM]; %partial or full path or empty
 ModelOptions.TimeStamp      = D.AOCTimewave; %time stamp to overwrite S.Time model output
 ModelOptions.IntTime        = 3600;
@@ -222,7 +244,7 @@ ModelOptions.GoParallel     = 0;
 
 S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam);
 
-clear Met InitConc ChemFiles BkgdConc ModelOptions SolarParam
+% clear Met InitConc ChemFiles BkgdConc ModelOptions SolarParam
 
 %% PLOTTING AND ANALYSIS
 if makeplots
@@ -231,35 +253,41 @@ if makeplots
 % this is only necessary because this example includes multiple mechanisms.
 switch MECHANISM
     case {'MCMv331','MCMv32'}
-        nHCHO='HCHO';
-        nCH3O2='CH3O2';
+        nHCHO   = 'HCHO';
+        nCH3O2  = 'CH3O2';
         nISOPO2 = 'ISOPBO2'; %just pick one
-        nANs = {'ANs','ISOPANO3','ISOPBNO3','ISOPCNO3','ISOPDNO3','MVKNO3','MACRNB','MACRNO3'}; %isopene subset
-        nNOy = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};
+        nANs    = {'ANs','ISOPANO3','ISOPBNO3','ISOPCNO3','ISOPDNO3','MVKNO3','MACRNB','MACRNO3'}; %isopene subset
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
     case {'CB05'}
-        nHCHO='FORM';
-        nCH3O2='MEO2';
+        nHCHO   = 'FORM';
+        nCH3O2  = 'MEO2';
         nISOPO2 = 'XO2'; %not quite correct b/c of lumping, but whatevs
-        nANs = {'ANs','NTR'};
-        nNOy = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};
+        nANs    = {'ANs','NTR'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
     case {'CB6r2'}
-        nHCHO='FORM';
-        nCH3O2='MEO2';
+        nHCHO   = 'FORM';
+        nCH3O2  = 'MEO2';
         nISOPO2 = 'ISO2';
-        nANs = {'ANs','INTR'};
-        nNOy = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};
+        nANs    = {'ANs','INTR'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
     case 'RACM2'
-        nHCHO='HCHO';
-        nCH3O2='MO2';
-        nISOPO2='ISOP';
-        nANs = {'ANs','ISON','ONIT'};
-        nNOy = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};
-    case 'GEOSCHEM'
-        nHCHO='CH2O';
-        nCH3O2='MO2';
+        nHCHO   = 'HCHO';
+        nCH3O2  = 'MO2';
+        nISOPO2 = 'ISOP';
+        nANs    = {'ANs','ISON','ONIT'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+    case {'GEOSCHEMv902','GEOSCHEMv1207'}
+        nHCHO   = 'CH2O';
+        nCH3O2  = 'MO2';
         nISOPO2 = 'RIO2';
-        nANs = {'ANs','ISOPNB','ISOPND','MACRN','MVKN'};
-        nNOy = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};
+        nANs    = {'ANs','ISOPNB','ISOPND','MACRN','MVKN'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+    case 'SAPRC07B'
+        nHCHO   = 'HCHO';
+        nCH3O2  = 'MEO2';
+        nISOPO2 = 'RO2C'; %not specific to ISOP
+        nANs    = {'ANs','RNO3'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};   %note, not complete
 end
 
 %%%%% J-VALUE SCALING %%%%% 
@@ -312,7 +340,7 @@ plot(D.AOCTimewave,D.PAN_ppbv,'k--')
 legend('Model','Obs')
 
 % Now let's look at the distribution of NOy, just for fun.
-PlotConcGroup(nNOy,S,[],'sortem',0,'name','NOy');
+PlotConcGroup(nNOy,S,[],'sortem',0,'name','NOyish');
 hold on
 plot(D.AOCTimewave,D.NOy_ppbv,'k--')
 text(0.03,0.97,'Dash: Observations')
@@ -322,6 +350,9 @@ text(0.03,0.97,'Dash: Observations')
 RO2reactants = {'NO','HO2','RO2'};
 PlotReactivity(nCH3O2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
 PlotReactivity(nISOPO2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
+
+% And, how about checking out HOx production and loss (excluding reactions that interconvert HOx)
+PlotRatesGroup({'HOx','OH','HO2'},S,10,'sumEq',1,'ptype','line')
 
 end %end makeplots if
 

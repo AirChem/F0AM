@@ -11,6 +11,7 @@ function [InitConc,Met] = Run2Init(S,pts2grab)
 %
 % 20121004 GMW
 % 20160327 GMW  Modified to deal with new Met fields.
+% 20200427 GMW  Changes to accomodate empty fields and family definitions.
 
 %%%%% CONCENTRATIONS %%%%%
 nSp = length(S.Cnames);
@@ -23,6 +24,16 @@ for i=1:nSp
     InitConc{i,3} = HoldMe(i);
 end
 
+% families
+if ~isempty(S.Chem.Family)
+    Fnames = fieldnames(S.Chem.Family);
+    for i = 1:length(Fnames)
+        InitConc{end+1,1} = Fnames{i};
+        InitConc{end,2} = S.Chem.Family.(Fnames{i}).names;
+        InitConc{end,3} = [];
+    end
+end
+
 %%%%% METEOROLOGY %%%%%
 S.Met = rmfield(S.Met,{'M','jcorr_all'});
 Mnames = fieldnames(S.Met);
@@ -30,7 +41,7 @@ Met = cell(length(Mnames),2);
 for i=1:length(Mnames)
     Met{i,1} = Mnames{i}; %name
     Metfield = S.Met.(Mnames{i});
-    if size(Metfield,1)==1 || ischar(Metfield)
+    if isscalar(Metfield) || ischar(Metfield) || isempty(Metfield)
         Met{i,2} = Metfield;
     else
         Met{i,2} = Metfield(pts2grab,:);

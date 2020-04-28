@@ -20,6 +20,7 @@ function [Xbroad,Xslice] = struct2parvar(X)
 %   Meant to be sliced along rows.
 %
 % 20180226 GMW
+% 20200427 GMW Modified to broadcast empty fields.
 
 % check for non-supported variable classes
 bad = structfun(@iscell,X);
@@ -32,7 +33,7 @@ end
 
 % broadcast vars
 Xnames = fieldnames(X);
-ibd = structfun(@isscalar,X) | structfun(@ischar,X) | structfun(@isstruct,X); %flag broadcast vars
+ibd = structfun(@isscalar,X) | structfun(@ischar,X) | structfun(@isstruct,X) | structfun(@isempty,X); %flag broadcast vars
 Xbroad = rmfield(X,Xnames(~ibd)); % broadcast variable structure
 
 % sliced vars

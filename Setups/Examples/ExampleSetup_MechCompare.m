@@ -4,7 +4,8 @@
 % 20160321 GMW
 
 clear
-allmech = {'MCMv331','MCMv32','CB05','CB6r2','RACM2','GEOSCHEM'};
+allmech = {'MCMv331','MCMv32','CB05','CB6r2','RACM2','SAPRC07B','GEOSCHEMv902','GEOSCHEMv1207'};
+% allmech = {'GEOSCHEMv902','GEOSCHEMv1207'};
 Sall = cell(size(allmech));
 makeplots = 0; %for FlightSS script
 for a = 1:length(allmech)
@@ -18,8 +19,11 @@ for a = 1:length(allmech)
         case {'CB05','CB6r2'}
             S.Conc.HCHO = S.Conc.FORM;
             S.Conc.MVKMAC = S.Conc.ISPD;
-        case 'GEOSCHEM'
+        case {'GEOSCHEMv902','GEOSCHEMv1207'}
             S.Conc.HCHO = S.Conc.CH2O;
+            S.Conc.MVKMAC = S.Conc.MVK + S.Conc.MACR;
+        case 'SAPRC07B'
+            S.Conc.H2O2 = S.Conc.HO2H;
             S.Conc.MVKMAC = S.Conc.MVK + S.Conc.MACR;
     end
         
@@ -35,6 +39,10 @@ PlotConc('H2O2',Sall,'lnames',allmech)
 PlotConc('NO',Sall,'lnames',allmech)
 hold on
 plot(D.AOCTimewave,D.NO_ppbv,'k--')
+
+PlotConc('NO2',Sall,'lnames',allmech)
+hold on
+plot(D.AOCTimewave,D.NO2_ppbv,'k--')
 
 PlotConc('HNO3',Sall,'lnames',allmech)
 hold on

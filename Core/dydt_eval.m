@@ -25,6 +25,7 @@ function dydt = dydt_eval(t,conc,param)
 %   iLR: index for "limiting reagent" reactions.
 %        dydt for these reactions will be k*min(conc(iG))
 %   Jac_flag: boolean 0/1 indicating if function is being called by Jac_eval.m
+%   t_start: starting time for integration. Needed for gaussian dilution.
 %
 % OUTPUTS:
 % dydt: matrix of rate of change of species, dim = nZ x nSp
@@ -48,6 +49,7 @@ Verbose     = param{10};
 Family      = param{11};
 iLR         = param{12};
 Jac_flag    = param{13};
+t_start     = param{14};
 
 conc = conc'; %ODE solver feeds this in as 1 row for each species
 
@@ -73,7 +75,7 @@ dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
 
 %% DILUTION
 if ~isinf(tgauss)
-    dilrate = -1./(tgauss + 2*t).*(conc - conc_bkgd); % gaussian dispersion
+    dilrate = -1./(tgauss + 2*(t+t_start)).*(conc - conc_bkgd); % gaussian dispersion
 else
     dilrate = -kdil.*(conc - conc_bkgd); % 1st-order dilution
 end
@@ -123,6 +125,6 @@ dydt(:,iHold) = 0;
 dydt = dydt'; %flip it back for ODE solver
 
 % print percent complete
-if Verbose>=4, meter(IntTime,t,10); end
+if Verbose >= 5, meter(IntTime,t,10); end
 
 

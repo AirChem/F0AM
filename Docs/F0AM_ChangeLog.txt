@@ -4,18 +4,7 @@ Questions? --> Glenn Wolfe, f0am.model@gmail.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-20190904
-
-Continued work on v4: addition of Convergence criteria
-
-Added options for solar cycle only that force it to run until "true" steady-state is reached.
-Major modifications to F0AM_ModelCore and IntegrateStep.
-
-Also reorganized top sections of F0AM_ModelCore and tweaked ModelOptions.Verbose message levels.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-20190108 TO 20190903
+20190108 TO 20200430
 
 F0AMv4
 
@@ -23,13 +12,17 @@ Throughout: changed "CAUTION" statements to warnings and tried to standardized w
 
 F0AM_ModelCore:
 
-    NEW family constraints
+    FAMILY CONSTRAINTS
         Added ability to conserve total concentration of a family of species (e.g. NOx).
         Families are indicated within the InitConc input as a nested cell array (see user manual).
         Code was added to multiple sections in F0AM_ModelCore to handle the inputs.
         Other modifications to subroutines (IntegrateStep, Jac_eval, dydt_eval) as described below.
         Also added a new function, Mass_eval.m, for ODE treatment.
-        As part of this change, the option "FixNOx" was also removed.
+        This code still doesn't work quite right, needs TLC.
+
+    CONVERGENCE CRITERIA
+        Added options for solar cycle only that force it to run until "true" steady-state is reached.
+        Major modifications to F0AM_ModelCore and IntegrateStep. See manual for details.
 
     ASSIGN DEFAULTS AND CHECK INPUTS Section:
      - Added input check for jcorr when it is input as a string or cell array.
@@ -37,7 +30,11 @@ F0AM_ModelCore:
      - Added warning that input SZA is overwritten in solar cycle mode.
 
     INTEGRATION section
-     - renamed i and j to "istep" and "irep" for better readability.
+     - renamed i to "istep" for better readability.
+
+    MODEL OPTIONS section
+     - Removed ModelOptions.Repeat functionality. Use the new "InputReplicate" function instead (see below).
+     - Tweaked ModelOptions.Verbose levels. See user manual for definitions.
 
 InitializeChemistry:
  - Modified error message for checking presence of jcorr variables in Jnames
@@ -72,16 +69,31 @@ NOAA Biomass burning mechanism:
     This not really a sub-mechanism, but rather an extended version of the full MCM.
     It is not possible to easily separate these b/c of shared reaction products.
 
+SAPRC07B:
+    New mechanism and text reader (MEC2F0AM.m). Thanks to Hongyu Chen and Jen Kaiser at GAtech.
+
+GEOSCHEMv12.07:
+    New GEOSCHEM mechanism and text reader (EQN2F0AM.m). Thanks to Xiangyu Liu and Jen Kaiser at GAtech.
+    Note, previous GEOSCHEM_AllRxns.m renamed to GEOSCHEMv902_AllRxns.m.
+
 New Functions:
 
     F0AM_benchmark: setup script to evaluate performance when monkeying with model guts.
         Still needs work for standardization.
 
-    Mass_eval: function to generate "mass matrix" used with ODE solver when constraining families.
+    Mass_eval: function to generate "mass matrix" used with ODE solver for family conservation.
 
     USatmos: new function in \Tools\ to calculate T and P altitude profiles for standard US Atmosphere.
     
     calc_HybridJtables: function to regenerate HybridJtables.mat if needed.
+
+    InputReplicate: function to replicate Met and InitConc inputs before calling model.
+                    Replaces ModelOptions.Repeat functionality.
+                    Use this if, e.g., you want to do a "spin-up."
+
+    InputInterp: function to interpolate Met and InitConc inputs to a finer time resolution.
+
+    PlotRatesGroup: function to plot rates for a chemical family, e.g. HOx or NOx.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
