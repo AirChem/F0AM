@@ -9,7 +9,6 @@ function SplitRun(S,mode,customIndex)
 % S: The structure you want to split.
 % mode: is an optional string that specifies how to separate the model run:
 %   'step':  separate each step (defined by each set of initial conditions)
-%   'rep':   separate each repetition of all steps (defined by ModelOptions.Repeat)
 %   'custom': separate using a custom-defined index (see below).
 %   default mode is "step".
 %
@@ -23,14 +22,17 @@ function SplitRun(S,mode,customIndex)
 % 20151031 GMW Updated to accomodate additional output variables Met.jcorr_all, Met.LFlux, and SolarParam.
 %              Added option for custom index and re-jiggered indexing and input-checking.
 %              Removed reset of S.Time when mode='rep'.
+% 20200427 GMW Removed support of repIndex (can still be done with the "custom" index option).
+%              Also removed use of breakin/breakout, problematic for some structures with variable
+%              data types.
 
 %%%%%CHECK INPUTS%%%%%
 if nargin<2
     mode = 'step';
 else
-    valid = {'step','rep','custom'};
-    if ~any(strcmp(mode,valid));
-        error('SplitRun: Invalid mode. Valid options are "step", "rep" and "custom".')
+    valid = {'step','custom'};
+    if ~any(strcmp(mode,valid))
+        error('SplitRun: Invalid mode. Valid options are "step" and "custom".')
     elseif strcmp(mode,'custom')
         if nargin<3
             error('SplitRun: "iCustom" argument must be included for "custom" index option.')
@@ -40,36 +42,15 @@ else
     end
 end
 
-%%%%%BREAK IN VARIABLES%%%%%
-[conc,Cnames] = breakin(S.Conc);
-dilrate = breakin(S.Chem.DilRates);
-[initconc,Inames] = breakin(S.InitConc);
-
-% Met
-jcorr_all = S.Met.jcorr_all;
-if isfield(S.Met,'LFlux')
-    LFlux = S.Met.LFlux;
-    S.Met = rmfield(S.Met,'LFlux');
-end
-[met,Mnames] = breakin(S.Met);
-
-if isstruct(S.BkgdConc)
-    [bkgdconc,Bnames] = breakin(S.BkgdConc);
-end
-
 %%%%%GET INDICES%%%%%
 iStep = S.StepIndex;
-iRep = S.RepIndex;
 
 %iInp is index for divying up input variables (e.g. InitConc)
 %iOut is index for divying up output variables (e.g. Conc)
 switch mode
     case 'step'
         iInp = unique(iStep);
-        iOut = iStep + (iRep-1)*max(iStep); %second bit monotonizes repeated steps
-    case 'rep'
-        iInp = unique(iStep);
-        iOut = iRep;
+        iOut = iStep;
     case 'custom'
         iInp = customIndex;
         iOut = customIndex(iStep);
@@ -81,43 +62,47 @@ L = length(each);
 for k = 1:L
     
     % flag subsets to grab
-    if strcmp(mode,'rep')
-        fInp = iInp; %grab all inputs
-    else
-        fInp = iInp == each(k);
-    end
+    fInp = iInp == each(k);
     fOut = iOut == each(k);
     
     Sk = struct;
-    Sk.BkgdConc         = breakout(bkgdconc(fInp,:),Bnames);
-    Sk.Chem.ChemFiles   = S.Chem.ChemFiles;
-    Sk.Chem.DilRates    = breakout(dilrate(fOut,:),Cnames);
-    Sk.Chem.Rates       = S.Chem.Rates(fOut,:);
-    Sk.Chem.Rnames      = S.Chem.Rnames;
-    Sk.Chem.f           = S.Chem.f;
-    Sk.Chem.iG          = S.Chem.iG;
-    Sk.Chem.k           = S.Chem.k(fInp,:);
-    Sk.Chem.iHold       = S.Chem.iHold;
-    Sk.Cnames           = S.Cnames;
-    Sk.Conc             = breakout(conc(fOut,:),Cnames);
-    Sk.InitConc         = breakout(initconc(fInp,:),Inames);
-    Sk.Met              = breakout(met(fInp,:),Mnames);
-    Sk.ModelOptions     = S.ModelOptions;
-    Sk.RepIndex         = S.RepIndex(fOut);
+    
+    % INPUTS
+    Sk.Met                  = splitStruct(S.Met,fInp);
+    Sk.InitConc             = splitStruct(S.InitConc,fInp);
+    Sk.BkgdConc             = splitStruct(S.BkgdConc,fInp);
+    Sk.ModelOptions         = S.ModelOptions;
+    Sk.SolarParam           = splitStruct(S.SolarParam,fInp);
+    Sk.SolarParam.Converge  = splitStruct(S.SolarParam.Converge,fInp);
+    
+    % OUTPUTS
+    Sk.Time             = S.Time(fOut);
     Sk.StepIndex        = S.StepIndex(fOut);
     Sk.iRO2             = S.iRO2;
-    Sk.Time             = S.Time(fOut);
+    Sk.Cnames           = S.Cnames;
+    Sk.Conc             = splitStruct(S.Conc,fOut);
     
-    Sk.Met.jcorr_all    = jcorr_all(fInp,:);
-    if exist('LFlux','var'), Sk.Met.LFlux = LFlux; end
+    Sk.Chem             = S.Chem;
+    Sk.Chem.DilRates    = splitStruct(S.Chem.DilRates,fOut);
+    Sk.Chem.Rates       = S.Chem.Rates(fOut,:);
+    Sk.Chem.k           = S.Chem.k(fInp,:);
     
-    Sk.SolarParam.lat       = S.SolarParam.lat(fInp,:);
-    Sk.SolarParam.lon       = S.SolarParam.lon(fInp,:);
-    Sk.SolarParam.alt       = S.SolarParam.alt(fInp,:);
-    Sk.SolarParam.startTime = S.SolarParam.startTime(fInp,:);
-    Sk.SolarParam.nDays     = S.SolarParam.nDays;
-    
+    Sk = orderfields(Sk);
+
     assignin('caller',['S' num2str(k)],Sk);
 end
 
+% subroutine for splitting structures with variable field datatypes
+    function Xsplit = splitStruct(X,flag)
+        names = fieldnames(X);
+        for i = 1:length(names)
+            v = X.(names{i});
+            if ischar(v) || isscalar(v) || isempty(v) || isstruct(v)
+                Xsplit.(names{i}) = v;
+            else
+                Xsplit.(names{i}) = v(flag,:);
+            end
+        end
+    end
 
+end

@@ -1,5 +1,5 @@
-function [X,Xnames] = breakin(S);
-% function [X,Xnames] = breakin(S);
+function [X,Xnames] = breakin(S)
+% function [X,Xnames] = breakin(S)
 % Essesntially does the opposite of breakout.
 % INPUT, S, is a structure where all fields are numeric arrays. All fields must have the same
 % dimensionality (column vectors).

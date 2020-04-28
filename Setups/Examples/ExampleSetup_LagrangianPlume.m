@@ -142,7 +142,6 @@ BkgdConc = {...
   window regarding model progress.
 "EndPointsOnly" is set to 0 because we want output to include all concentrations along each model step.
 "LinkSteps" is set to 1 because each step is connected.
-"Repeat" is set to 1 because we only want to go through each step once.
 "IntTime" is the integration time for each step. The average for constraints is 250s.
 "SavePath" is just a filename, which will be saved by default in the \Runs\ folder.
 %}
@@ -150,7 +149,6 @@ BkgdConc = {...
 ModelOptions.Verbose = 1;         %flag for verbose output
 ModelOptions.EndPointsOnly = 0;   %flag for concentration and rate outputs
 ModelOptions.LinkSteps = 1;       %flag for using end-points of one run to initialize next run
-ModelOptions.Repeat = 1;          %number of times to loop through all constraints
 ModelOptions.IntTime = 250;       %integration time for each step, seconds
 ModelOptions.SavePath = 'LGPlumeResults';
 

@@ -54,8 +54,8 @@ struct2var(Met)
 struct2var(ModelOptions)
 Mnames = fieldnames(Met);
 
-nRx = 18000;     %number of reactions (try to over-guess)
-nSp = 5900;      %number of species (try to over-guess)
+nRx = 20000;     %number of reactions (try to over-guess)
+nSp = 7000;      %number of species (try to over-guess)
 nIc = length(T); %number of initial conditions
 
 fstr     = [];             %horizontal string for concatenating coefficient (f) vectors
@@ -99,9 +99,10 @@ if ~isempty(ChemFiles{2})
         % determine generic scaling factor for non-constrained J
         if iscellstr(jcorr)
             [tf,Jloc] = ismember(jcorr,Jnames);
-            if isempty(Jloc)
+            if any(~tf) %isempty(Jloc)
+                j = find(~tf,1,'first');
                 error('InitializeChemistry:InvalidInput',...
-                    'Met.jcorr variable "%s" not output by ChemFiles function "%s".',jcorr{tf},ChemFiles{2})
+                    'Met.jcorr variable "%s" not output by ChemFiles function "%s".',jcorr{j},ChemFiles{2})
             end
             jcorr = mean(jcorr_all(:,Jloc),2); %grab and average and replace string with numeric array
         end
@@ -153,6 +154,7 @@ end
 %% CHECK FOR DUPLICATE REACTIONS
 if nargin<4 || firstCall
     [repRx,~,POS,IR] = repval(Rnames); %get repeated reaction names
+    if isempty(repRx), repRx = {}; end %deal with empty return from repval
     notRep=false(size(repRx));
     
     % filter further by rate constants

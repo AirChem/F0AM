@@ -26,6 +26,7 @@ tgauss      = param{7};
 Family      = param{11};
 iLR         = param{12};
 % Jac_flag    = param{13};
+t_start = param{14};
 
 [nRx,nSp] = size(f);
 
@@ -66,7 +67,7 @@ Jac = f'*DratesDy;
 
 %% DILUTION
 % treated as first-order
-if ~isinf(tgauss),  dilrate = 1./(tgauss + 2*t); %gaussian dispersion
+if ~isinf(tgauss),  dilrate = 1./(tgauss + 2*(t+t_start)); %gaussian dispersion
 else,               dilrate = kdil;              %1st-order dilution
 end
 idg = sub2ind([nSp nSp],3:nSp,3:nSp); %get diagonal indices

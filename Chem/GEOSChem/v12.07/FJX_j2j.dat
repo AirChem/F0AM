@@ -1,0 +1,138 @@
+<--J-value data from chemistry code: id#, reaction,       factor/fastJX/code(a6)
+   1 O2        PHOTON    O         O                       1.000 /O2    /
+   2 O3        PHOTON    O2        O                       1.000 /O3    /
+   3 O3        PHOTON    O2        O(1D)                   1.000 /O3(1D)/
+   4 H2O       PHOTON    OH        H                       0.000 /H2O   /
+   5 HO2       PHOTON    OH        O                       0.000 /HO2   / 
+   6 NO        PHOTON    N         O                       1.000 /NO    /
+   7 CH2O      PHOTON    H         HO2      CO             1.000 /H2COa /
+   8 CH2O      PHOTON    CO        H2                      1.000 /H2COb /
+   9 H2O2      PHOTON    OH        OH                      1.000 /H2O2  /
+  10 MP        PHOTON    CH2O      HO2      OH             1.000 /CH3OOH/
+  11 NO2       PHOTON    NO        O                       1.000 /NO2   /
+  12 NO3       PHOTON    NO2       O                       0.886 /NO3   /
+  13 NO3       PHOTON    NO        O2                      0.114 /NO3   /
+  14 N2O5      PHOTON    NO2       NO3                     1.000 /N2O5  /
+  15 HNO2      PHOTON    NO        OH                      1.000 /HNO2  /
+  16 HNO3      PHOTON    NO2       OH                      1.000 /HNO3  /
+  17 HNO4      PHOTON    OH        NO3                     0.050 /HNO4  /
+  18 HNO4      PHOTON    NO2       HO2                     0.950 /HNO4  /
+  19 ClNO3     PHOTON    Cl        NO3                     1.000 /ClNO3a/
+  20 ClNO3     PHOTON    ClO       NO2                     1.000 /ClNO3b/
+  21 ClNO2     PHOTON    Cl        NO2                     1.000 /ClNO2 /
+  22 Cl2       PHOTON    Cl        Cl                      1.000 /Cl2   /
+  23 Br2       PHOTON    Br        Br                      1.000 /Br2   /
+  24 HOCl      PHOTON    Cl        OH                      1.000 /HOCl  /
+  25 OClO      PHOTON    ClO       O                       1.000 /OClO  /
+  26 Cl2O2     PHOTON    Cl        Cl        O2            1.000 /Cl2O2 /
+  27 ClO       PHOTON    Cl        O                       1.000 /ClO   /
+  28 BrO       PHOTON    Br        O                       1.000 /BrO   /
+  29 BrNO3     PHOTON    Br        NO3                     0.850 /BrNO3 /
+  30 BrNO3     PHOTON    BrO       NO2                     0.150 /BrNO3 /
+  31 BrNO2     PHOTON    Br        NO2                     1.000 /BrNO2 /
+  32 HOBr      PHOTON    Br        OH                      1.000 /HOBr  /
+  33 BrCl      PHOTON    Br        Cl                      1.000 /BrCl  /
+  34 OCS       PHOTON    SO2       CO                      1.000 /OCS   /
+  35 SO2       PHOTON    SO        O                       1.000 /SO2   /
+  36 N2O       PHOTON    N2        O                       1.000 /N2O   /
+  37 CFC11     PHOTON    Cl        PRODUCTS                1.000 /CFCl3 /
+  38 CFC12     PHOTON    Cl        PRODUCTS                1.000 /CF2Cl2/
+  39 CFC113    PHOTON    Cl        PRODUCTS                1.000 /F113  /
+  40 CFC114    PHOTON    Cl        PRODUCTS                1.000 /F114  /
+  41 CFC115    PHOTON    Cl        PRODUCTS                1.000 /F115  /
+  42 CCl4      PHOTON    Cl        PRODUCTS                1.000 /CCl4  /
+  43 CH3Cl     PHOTON    Cl        PRODUCTS                1.000 /CH3Cl /
+  44 CH3CCl3   PHOTON    Cl        PRODUCTS                1.000 /MeCCl3/
+  45 CH2Cl2    PHOTON    Cl        PRODUCTS                1.000 /CH2Cl2/
+  46 HCFC22    PHOTON    Cl        PRODUCTS                1.000 /CHF2Cl/
+  47 HCFC123   PHOTON    Cl        PRODUCTS                1.000 /F123  /
+  48 HCFC141b  PHOTON    Cl        PRODUCTS                1.000 /F141b /
+  49 HCFC142b  PHOTON    Cl        PRODUCTS                1.000 /F142b /
+  50 CH3Br     PHOTON    Br        PRODUCTS                1.000 /CH3Br /
+  51 H1211     PHOTON    Br        PRODUCTS                1.000 /H1211 /
+  52 H12O2     PHOTON    Br        PRODUCTS                1.000 /H1211 /
+  53 H1301     PHOTON    Br        PRODUCTS                1.000 /H1301 /
+  54 H2402     PHOTON    Br        PRODUCTS                1.000 /H2402 /
+  55 CH2Br2    PHOTON    Br        PRODUCTS                1.000 /CH2Br2/
+  56 CHBr3     PHOTON    Br        PRODUCTS                1.000 /CHBr3 /
+  58 CF3I      PHOTON    I         PRODUCTS                1.000 /CF3I  /
+  59 PAN       PHOTON    CH3C(O)O2 NO2                     1.000 /PAN   /
+  60 R4N2      PHOTON    CH3O      NO2                     1.000 /CH3NO3/
+  61 ALD2      PHOTON    CH3       HCO                     1.000 /ActAld/
+  62 ALD2      PHOTON    CH4       CO                      1.000 /ActAlx/
+  63 MVK       PHOTON    PRPE      CO                      0.600 /MeVK  /
+  64 MVK       PHOTON    MCO3      CH2O      CO     HO2    0.200 /MeVK  /
+  65 MVK       PHOTON    MO2       RCO3                    0.200 /MeVK  /
+  66 MACR      PHOTON    CO        HO2       CH2O   MCO3   1.000 /MeAcr /
+  67 MACR      PHOTON    IMAO3  OH HO2 MCO3 MRO2 CO        0.000 /MeAcr /
+  68 GLYC      PHOTON    CH2O   HO2   OH  CO  MOH          1.000 /GlyAld/
+  69 MEK       PHOTON    MCO3      EtO2      MO2    RCO3   1.000 /MEKeto/
+  70 RCHO      PHOTON    EtO2      HO2       CO            1.000 /PrAld /
+  71 MGLY      PHOTON    MCO3      CO        HO2           1.000 /MGlyxl/
+  72 GLYX      PHOTON    HO2 HO2 CO CO                     1.000 /Glyxla/
+  73 GLYX      PHOTON    H2        CO        CO            1.000 /Glyxlb/
+  74 GLYX      PHOTON    CH2O      CO                      1.000 /Glyxlc/
+  75 HAC       PHOTON    MeCO3     HCHO      HO2           0.600 /HAC   /
+  76 ACET      PHOTON    MCO3      MO2                     1.000 /Acet-a/
+  77 ACET      PHOTON    MO2       MO2       CO            1.000 /Acet-b/
+  78 INPN      PHOTON    OH        HO2       RCHO   NO2    1.000 /CH3OOH/
+  79 PRPN      PHOTON    OH        HO2       RCHO   NO2    1.000 /CH3OOH/
+  80 ETP       PHOTON    OH        HO2       ALD2          0.500 /CH3OOH/
+  81 RA3P      PHOTON    OH        HO2       RCHO          1.000 /CH3OOH/
+  82 RB3P      PHOTON    OH        HO2       ACET          1.000 /CH3OOH/
+  83 R4P       PHOTON    OH        HO2       RCHO          1.000 /CH3OOH/
+  84 PP        PHOTON    OH        HO2       ALD2   CH2O   1.000 /CH3OOH/
+  85 RP        PHOTON    OH        HO2       ALD2          1.000 /CH3OOH/
+  86 RIP       PHOTON    OH HO2 CH2O MVK MACR IALD         1.000 /CH3OOH/
+  87 IAP       PHOTON    OH HO2 CO H2 HAC GLYC MGLY        1.000 /CH3OOH/
+  88 ISNP      PHOTON    OH HO2 RCHO NO2                   1.000 /CH3OOH/
+  89 VRP       PHOTON    OH HO2 CH2O MCO3 GLYC MGLY        1.000 /CH3OOH/
+  90 MRP       PHOTON    OH HO2 HAC CO CH2O                1.000 /CH3OOH/
+  91 MAOP      PHOTON    OH CH2O MCO3                      1.000 /CH3OOH/
+  92 MACRN     PHOTON    NO2 HCA MGLY CH2O HO2 CO          1.000 /MACRN /
+  93 MVKN      PHOTON    GLYC NO2 MCO3                     1.000 /MVKN  /   
+  94 ISOPNB    PHOTON    OH HO2 RCHO                       1.000 /ONIT1 /
+  95 ISOPND    PHOTON    OH HO2 RCHO                       1.000 /ONIT1 /  
+  96 PROPNN    PHOTON    CH2O NO2 CO MO2                   1.000 /PROPNN/
+  97 ATOOH     PHOTON    OH HO2 RCHO                       1.000 /CH3OOH/
+  98 R4N2      PHOTON    NO2 ACET MEK MO2 HO2 ALD2...      1.000 /CH3NO3/
+  99 MAP       PHOTON    OH        MO2                     1.000 /CH3OOH/
+ 100 SO4       PHOTON    SO2       OH        OH            1.000 /H2SO4 /
+ 101 ClOO      PHOTON    Cl        O2                      1.000 /ClOO  /
+ 102 O3        PHOTON    O2        O(1D)                   1.000 /O3(1D)/
+ 103 MPN       PHOTON    HO2       NO3       HCHO          0.050 /MPN   /
+ 104 MPN       PHOTON    MO2       NO2                     0.950 /MPN   /
+ 105 PIP       PHOTON    RCHO OH HO2                       1.000 /H2O2  /
+ 106 IPMN      PHOTON    IMAO3 NO2 CO2 CH2O MCO3 NO3       1.000 /PAN   /
+ 107 ETHLN     PHOTON    NO2 CH2O CO HO2                   1.000 /ETHLN /
+ 108 DHDC      PHOTON    MGLY GLYX  OH                     1.000 /MeAcr /
+ 109 HPALD     PHOTON    MGLY HAC GLYC MCO3 CO HO2 OH      1.000 /MeAcr /
+ 110 ISN1      PHOTON    NO2 HO2 GLYC GLYX MGLY CH2O HAC   1.000 /MeAcr /
+ 111 MONITS    PHOTON    MEK  NO2                          1.000 /ONIT1 /
+ 112 MONITU    PHOTON    RCHO NO2                          1.000 /ONIT1 /
+ 113 HONIT     PHOTON    HAC  NO2                          1.000 /ONIT1 /
+ 114 I2        PHOTON    I         I                       1.000 /I2    /
+ 115 HOI       PHOTON    I         OH                      1.000 /HOI   /
+ 116 IO        PHOTON    I         O                       1.000 /IO    /
+ 117 OIO       PHOTON    I         O2                      1.000 /OIO   /
+ 118 INO       PHOTON    I         NO                      1.000 /INO   /
+ 119 IONO      PHOTON    I         NO2                     1.000 /IONO  /
+ 120 IONO2     PHOTON    I         NO3                     1.000 /IONO2 /
+ 121 I2O2      PHOTON    I         OIO                     1.000 /I2O2  /
+ 122 CH3I      PHOTON    I         PRODUCTS                1.000 /CH3I  /
+ 123 CH2I2     PHOTON    I         I         PRODUCTS      1.000 /CH2I2 /
+ 124 CH2ICl    PHOTON    I         Cl        PRODUCTS      1.000 /CH2ICl/
+ 125 CH2IBr    PHOTON    I         Br        PRODUCTS      1.000 /CH2IBr/
+ 126 I2O4      PHOTON    OIO       OIO                     1.000 /I2O2  /
+ 127 I2O3      PHOTON    OIO       IO                      1.000 /I2O3  /
+ 128 IBr       PHOTON    I         Br                      1.000 /IBr   /
+ 129 ICl       PHOTON    I         Cl                      1.000 /ICl   /
+ 130 NITs      PHOTON    HNO2                              1.000 /      /
+ 131 NITs      PHOTON    NO2                               1.000 /      /
+ 132 NIT       PHOTON    HNO2                              1.000 /      /
+ 133 NIT       PHOTON    NO2                               1.000 /      /
+ 134 MENO3     PHOTON    NO2       HO2       HCHO          1.000 /MENO3 /
+ 135 ETNO3     PHOTON    NO2       HO2       ALD2          1.000 /ETNO3 /
+ 136 IPRNO3    PHOTON    NO2       HO2       ACET          1.000 /IPRNO3/
+ 137 NPRNO3    PHOTON    NO2       HO2       RCHO          1.000 /NPRNO3/
+9999

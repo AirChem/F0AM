@@ -45,7 +45,7 @@ Met = {...
     'RH'         SOAS.RH; %Relative Humidity, %
     'SZA'        sun.zenith; %solar zenith angle, degrees
     'kdil'       1/(24*60*60); %dilution constant, /s
-    'jcorr'      1;
+    'jcorr'      0.5; %optimizes comparison b/w model and observed NO/NO2
     };
 
 %% CHEMICAL CONCENTRATIONS
@@ -63,7 +63,7 @@ InitConc = {...
     
     %Inorganics
     'H2'                550                  1;
-    'O3'                SOAS.O3              1;
+    'O3'                SOAS.O3              0;
     'OH'                SOAS.OH              0;
     'CO'                SOAS.CO              1;
     'H2O2'              SOAS.H2O2            1;
@@ -74,7 +74,7 @@ InitConc = {...
     'PAN'               SOAS.PAN             1;
     'C2H5NO3'           SOAS.C2H5NO3         1;
     'IC3H7NO3'          SOAS.IC3H7NO3        1;
-%     'NOx'               {'NO2','NO'}        [];
+    'NOx'               {'NO2','NO'}        []; %family conservation
     
     %Biogenics
     'C5H8'              SOAS.C5H8            1;
@@ -131,7 +131,7 @@ ChemFiles = {...
    'MCMv331_K(Met)';
    'MCMv331_J(Met,0)'; %Jmethod flag of 0 specifies default MCM parameterization
    'MCMv331_DielExampleChemistry';
-%     'MCMv331_Inorg_Isoprene'
+%     'MCMv331_Inorg_Isoprene'; %alternate mechanism with less VOC
    };
 
 %% DILUTION CONCENTRATIONS
@@ -147,47 +147,87 @@ BkgdConc = {'DEFAULT'       0};
   window regarding model progress.
 "EndPointsOnly" is set to 1 because we only want the last point of each step.
 "LinkSteps" is set to 1 so that non-constrained species are carried over between steps.
-"Repeat" is set to 3 to loop through the full set of constraints 3 times.
 "IntTime" is the integration time for each step, equal to the spacing of the data (60 minutes).
 "TimeStamp" is set to the hour-of-day for observations.
 "SavePath" give the filename only (in this example); the default save directory is the UWCMv3\Runs folder.
 "FixNOx" forces total NOx to be reset to constrained values at the beginning of every step.
 %}
 
-ModelOptions.Verbose        = 1;
+ModelOptions.Verbose        = 2;
 ModelOptions.EndPointsOnly  = 1;
 ModelOptions.LinkSteps      = 1;
-ModelOptions.Repeat         = 3;
 ModelOptions.IntTime        = 3600; %3600 seconds/hour
 ModelOptions.TimeStamp      = SOAS.Time;
 ModelOptions.SavePath       = 'DielExampleOutput';
-% ModelOptions.FixNOx         = 1;
+% ModelOptions.FixNOx         = 1; %if you use this, disable family conservation above.
+
+
+%% INPUT REPLICATION AND INTERPOLATION
+% For this particular scenario, it might be desirable to modify the inputs in a few ways.
+% This sections demonstrates how to do so.
+
+% INTERPOLATION
+% Inputs currently have a time resolution of 60 minutes, but this is pretty coarse (the sun can move
+% a lot in 60 minutes). The InputInterp function allows you to interpolate all inputs to a finer
+% time resolution. NOTES:
+%   - If your native data is fast (e.g., 1 Hz), it is generally better practice to bin-average that 
+%       data to your desired resolution rather than average down to 60 minutes and then interpolate as done here.
+%   - Make sure you adjust ModelOptions.IntTime too!
+% To turn this on, set the "0" to "1" below.
+if 0
+    dt = 1800; %time spacing, seconds
+    
+    Time_interp = (0:dt:(86400-dt))'/3600; %interpolation timebase, fractional hours (to match SOAS.Time)
+    circularFlag = 1; % time wraps around at midnight
+    [Met,InitConc,BkgdConc] = ...
+        InputInterp(Met,InitConc,BkgdConc,SOAS.Time,Time_interp,circularFlag);
+    ModelOptions.TimeStamp = Time_interp;
+    ModelOptions.IntTime = dt;
+end
+
+% REPLICATION
+% Sometimes you may want to run the same inputs for multiple times. Typically, this scenario would
+% be ground-site observations over one or more days, and you need a "spin-up" for non-measured
+% species. The InputReplicate function lets you do this. Note, this only makes sense to use if
+% ModelOptions.LinkSteps = 1. This replaces the "ModelOptions.Repeat" functionality in model
+% versions prior to F0AMv4.
+% Here, we run the same contraints for 3 days.
+% The output "repIndex" is used to separate the days with SplitRun later.
+nRep = 3; %number of days to repeat
+[Met,InitConc,BkgdConc,repIndex] = InputReplicate(Met,InitConc,BkgdConc,nRep);
+ModelOptions.TimeStamp = repmat(ModelOptions.TimeStamp,nRep,1);
 
 %% MODEL RUN
 % Now we call the model. Note this may take several minutes to run, depending on your system.
 % Output will be saved in the "SavePath" above and will also be written to the structure S.
-% Let's also throw away the inputs (don't worry, they are saved in the output structure).
 
 S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions);
-clear Met InitConc ChemFiles BkgdConc ModelOptions
+% clear Met InitConc ChemFiles BkgdConc ModelOptions
 
 %% PLOTTING AND ANALYSIS
 
 % First, let's separate the three days using SplitRun.
 % The first day is effectively "spin-up" for secondary and intermediate species.
-SplitRun(S,'rep')
-S2.Time = S2.Time - 24; %make timestamps the same
-S3.Time = S3.Time - 48;
+SplitRun(S,'custom',repIndex)
 
 % Now let's see how well we simulated NO and NO2, since only total NOx was "fixed".
 S3.Conc.NOx = S3.Conc.NO+S3.Conc.NO2;
 PlotConcGroup({'NO','NO2','NOx'},S3,3,'sortem',0,'ptype','line')
 hold on
 plot(SOAS.Time,SOAS.NO,'b--')
-plot(SOAS.Time,SOAS.NO2,'--','color',[0 128/255 0])
-plot(SOAS.Time,SOAS.NO+SOAS.NO2,'r--')
+plot(SOAS.Time,SOAS.NO2,'r--')
+plot(SOAS.Time,SOAS.NO+SOAS.NO2,'y--')
 text(0.55,0.7,'solid: model')
 text(0.55,0.6,'dash: observed')
+legend('NO','NO2','NOx')
+
+figure
+plot(SOAS.Time,SOAS.NO./SOAS.NO2,'k-')
+hold on
+plot(S3.Time,S3.Conc.NO./S3.Conc.NO2,'k--')
+xlabel('Model Time')
+ylabel('NO/NO2')
+legend('Obs','Model')
 
 % Now, let's see how ozone did over the three days.
 PlotConc('O3',{S1,S2,S3})

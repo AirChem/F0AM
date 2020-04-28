@@ -2,13 +2,11 @@
 
 Framework for 0-D Atmospheric Modeling
 
-Most recent public release: [**v3.2**](https://github.com/AirChem/F0AM/releases/latest)
+Most recent public release: [**v4.0**](https://github.com/AirChem/F0AM/releases/latest)
 
 Contact: F0AM.model at gmail.com
 
 Discussion Forum/Email List: https://groups.google.com/forum/#!forum/f0amusers
-
-# THIS IS F0AM V4.0 BETA. CODE IS UNDER DEVELOPMENT FOR FUTURE RELEASE.
 
 ### Welcome!
 F0AM is a MATLAB program for simulating atmospheric chemistry systems. It is user-friendly and adaptable to a variety of typical applications, including:
@@ -35,6 +33,6 @@ F0AM is a community tool, and we encourage users to share new code/functionality
 
 ### Additional Notes
 
-As of F0AMv3.2, heterogeneous (aerosol) chemistry is not rigorously supported. Despair not, for Joel Thornton, Emma D'Ambro and Havala Pye have developed a gas-to-particle partitioning extension, the [Washington Aerosol Module (WAM)](https://www.atmos.washington.edu/~thornton/washington-aerosol-module). This module is a branch from F0AMv3.1 and will be merged with the master branch in a future release.
+Heterogeneous (aerosol) chemistry is not rigorously supported. Despair not, for Joel Thornton, Emma D'Ambro and Havala Pye have developed a gas-to-particle partitioning extension, the [Washington Aerosol Module (WAM)](https://www.atmos.washington.edu/~thornton/washington-aerosol-module). This module is a branch from F0AMv3.1 and will be merged with the master branch in a future release.
 
 Happy modeling!

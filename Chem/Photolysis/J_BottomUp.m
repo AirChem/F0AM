@@ -30,6 +30,7 @@ function J = J_BottomUp(LFlux,T,P,J2plot)
 % 20190122 GMW  Added Jn37 - 50 for Sherwen GEOS-Chem mechanism.
 %               Changed initialization for better memory allocation.
 % 20190501 GMW  Added Jn52 (furfural).
+% 20200421 GMW  Added Jn53 - 56 (halogen reactions in SAPRC07B)
 
 % Initialization
 nj = 200; %overguess number of rate constants
@@ -493,6 +494,26 @@ i = i + 1;
 Jnames{i} = 'Jn51';
 CS{i} = 'Cross_Section_IBr_JPL-2010(2011)_298K_220-600nm(rec).txt';
 QY{i} = 1; %Haven't checked this.
+
+i = i + 1;
+Jnames{i} = 'Jn53';
+CS{i} = 'Cross_Section_ClNO_IUPAC2006.csv';
+QY{i} = 1; %IUPAC 2006 recommendation
+
+i = i + 1;
+Jnames{i} = 'Jn54';
+CS{i} = 'Cross_Section_ClONO_IUPAC2006.csv';
+QY{i} = 1; %IUPAC 2006 recommendation
+
+i = i + 1;
+Jnames{i} = 'Jn55';
+CS{i} = 'CH2ClCHO_JPL-2010(2011)_298K_240-357nm(rec).txt';
+QY{i} = 1; %No recommendation
+
+i = i + 1;
+Jnames{i} = 'Jn56';
+CS{i} = 'CH3C(O)CH2Cl_JPL-2010(2011)_296K_210-360nm(rec).txt';
+QY{i} = 1; %No recommendation
 
 
 %% BIOMASS BURNING GOODIES

@@ -78,7 +78,6 @@ BkgdConc = {...
   window regarding model progress.
 "EndPointsOnly" is set to 0 because we want output to include all concentrations along each model step.
 "LinkSteps" is set to 0 because each step is fully independent.
-"Repeat" is set to 1 because we only want to go through each step once.
 "IntTime" is the integration time for each step. Let's pretend each experiment lasts 3 hours.
 "SavePath" will store the output in the default "Runs" folder under the base F0AM directory
 "GoParallel" can be utilized since each step is independent (assuming you have the parallel computing toolbox)
@@ -87,7 +86,6 @@ BkgdConc = {...
 ModelOptions.Verbose       = 1;
 ModelOptions.EndPointsOnly = 0;
 ModelOptions.LinkSteps     = 0;
-ModelOptions.Repeat        = 1;
 ModelOptions.IntTime       = 3*3600;
 ModelOptions.SavePath      = 'ChamberExampleOutput.mat';
 ModelOptions.GoParallel    = 0;
@@ -139,10 +137,15 @@ yieldWindow = [500 1000]; %time window, seconds
 PlotYield(S1,'C5H8',{'C5HPALD1','C5HPALD2'},yieldWindow);
 
 %% EVENTS
-% Finally, let's say you continue the second experiment for longer, but with more lights.
+% Finally, let's say you continue the sec
+ond experiment for longer, but with more lights.
 
 [InitConc,Met] = Run2Init(S2,length(S2.Time)); %get initialization values
-Met{4,2} = 10; %increase jcorr x10
+
+%increase jcorr x10
+loc = ismember(Met(:,1),'jcorr');
+Met{loc,2} = 10;
+
 ModelOptions.IntTime = 3600;
 ModelOptions.SavePath  = 'ChamberExampleHighLightsOutput.mat';
 

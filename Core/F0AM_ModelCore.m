@@ -12,10 +12,11 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 % 20160901 GMW    Work began on v3.2. See Changelog.
 % 20190108 GMW    Work began on v4. See Changelog.
 
-StartTime = now;
-disp('INITIALIZING MODEL...')
+F0AMversion = 'F0AMv4';
 
- %suppress stack-trace messages in warnings
+StartTime = now;
+
+% suppress stack-trace messages in warnings
 warnstate = warning('query','backtrace');
 warning('off','backtrace')
 
@@ -29,16 +30,20 @@ BkgdConc = breakout(BkgdConc(:,2),BkgdConc(:,1));
 FieldInfo = {...
     %Valid              %Required       %Default
     'IntTime'           1               []  ;...
-    'Verbose'           0               0   ;...
+    'Verbose'           0               1   ;...
     'EndPointsOnly'     0               1   ;...
     'LinkSteps'         0               0   ;...
-    'Repeat'            0               1   ;...
     'SavePath'          0               ''  ;...
     'TimeStamp'         0               []  ;...
     'DeclareVictory'    0               0   ;...
     'GoParallel'        0               0   ;...
+    'FixNOx'            0               0   ;...
     };
 ModelOptions = CheckStructure(ModelOptions,FieldInfo);
+
+if ModelOptions.Verbose >= 1
+    disp(['INITIALIZING ' F0AMversion '...'])
+end
 
 % check for incompatible options
 if ModelOptions.GoParallel && ModelOptions.LinkSteps
@@ -48,10 +53,14 @@ if ModelOptions.GoParallel && ModelOptions.LinkSteps
 elseif ModelOptions.GoParallel && ~exist('parfor','builtin')
     error('F0AM_ModelCore:InvalidInput',...
     'Parallel computing toolbox is required to use ModelOptions.GoParallel.')
-elseif ModelOptions.Repeat>1 && ~ModelOptions.LinkSteps
-    error('F0AM_ModelCore:InvalidInput',...
-    ['ModelOptions.Repeat > 1 and ModelOptions.LinkSteps = 0 are incompatible. ' ...
-    'Why repeat the same model run???'])
+elseif ModelOptions.FixNOx
+    if any(~ismember({'NO','NO2'},fieldnames(InitConc))) % check that NO and NO2 are in InitConc
+        error('F0AM_ModelCore:MissingInput',...
+            'Cannot use ModelOptions.FixNOx if NO or NO2 missing from InitConc.')
+    elseif any(structfun(@iscell,InitConc))
+        error('F0AM_ModelCore:InvalidInput',...
+            'ModelOptions.FixNOx is incompatible with Family Conservation.')
+    end
 end
 
 % initialize parpool if needed
@@ -150,7 +159,7 @@ if nargin==6
     sun = sun_position(sTime,location); %zenith and azimuth angles of sun
     sun.zenith(sun.zenith>90) = 90;
     
-    if isfield(Met,'SZA')
+    if isfield(Met,'SZA') && ~isempty(Met.SZA)
         warning('F0AM_ModelCore:UnusedInput',...
             'Solar cycle enabled. Input Met.SZA will be overwritten.')
     end
@@ -262,7 +271,7 @@ if length(lUnq)==2
     lExpand = max(lUnq); %length to expand all constraints to
     
     for i=1:length(lMet)
-        if lMet(i)==1 && ~ischar(Met.(Mnames{i}))
+        if lMet(i)==1 && (~ischar(Met.(Mnames{i})) && ~iscell(Met.(Mnames{i})))
             Met.(Mnames{i}) = repmat(Met.(Mnames{i}),lExpand,1);
         end
     end
@@ -305,6 +314,10 @@ end
 nRx = length(Chem.Rnames);  %number of reactions
 nSp = length(Cnames);       %number of species
 nIc = length(Met.T);        %number of input constraints
+
+if ModelOptions.FixNOx
+    [~,Chem.iNOx] = ismember({'NO','NO2'},Cnames); %get indices for NO and NO2
+end
 
 %% INITIALIZE CONCENTRATIONS
 
@@ -431,61 +444,42 @@ conc_bkgd(:,1) = 1; %ONE is first species
 [Mbroad,Mslice] = struct2parvar(Met);
 
 % initialize outputs as cell arrays (will parse/concatenate after run)
-[Conc,Time,StepIndex,RepIndex,k_solar,SZA_solar,days_solar] = deal(cell(nIc,ModelOptions.Repeat));
+[Conc,Time,StepIndex,k_solar,SZA_solar,days_solar] = deal(cell(nIc,1));
+conc_last = [];
+t_start = 0;
 
-% loop through constraints
-for irep = 1:ModelOptions.Repeat
+% loop through all steps
+if ModelOptions.GoParallel
     
-    % message
-    if ModelOptions.Verbose>=1 && ModelOptions.Repeat>1
-        fprintf('Rep %u of %u\n',irep,ModelOptions.Repeat)
+    % parallel for-loop
+    parfor istep = 1:nIc
+        [Conc{istep},Time{istep},StepIndex{istep},...
+            k_solar{istep},SZA_solar{istep},days_solar{istep}] = ...
+            IntegrateStep(istep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
+            Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
     end
     
-    % get last model output for linking Repeat loops if needed
-    if irep==1
-        conc_last = [];
-        t_start = 0;
-    else
-        conc_last = Conc{end,irep-1}(end,:);
-        t_start = Time{end,irep-1}(end);
+else
+    
+    % serial for-loop
+    for istep = 1:nIc
+        [Conc{istep},Time{istep},StepIndex{istep},...
+            k_solar{istep},SZA_solar{istep},days_solar{istep}] = ...
+            IntegrateStep(istep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
+            Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
+        
+        if ModelOptions.LinkSteps
+            conc_last = Conc{istep}(end,:);
+            t_start = Time{istep}(end); %needed for Gaussian dilution
+        end
     end
-        
-    if ModelOptions.GoParallel
-
-        % parallel for-loop
-        parfor istep = 1:nIc
-            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
-                k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
-                IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
-                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
-        end
-        
-    else
-        
-        % serial for-loop
-        for istep = 1:nIc
-            [Conc{istep,irep},Time{istep,irep},StepIndex{istep,irep},RepIndex{istep,irep},...
-                k_solar{istep,irep},SZA_solar{istep,irep},days_solar{istep,irep}] = ...
-                IntegrateStep(istep,irep,nIc,conc_init(istep,:),conc_last,conc_bkgd(istep,:),ModelOptions,...
-                Chem,k(istep,:),Sbroad,Sslice(istep,:),Mbroad,Mslice(istep,:),t_start);
-            
-            if ModelOptions.LinkSteps
-                conc_last = Conc{istep,irep}(end,:);
-                t_start = Time{istep,irep}(end);
-            end
-        end
-        
-    end  % end for/parfor choice
-end      % end Repeat loop
-
-RunTime = (now - StartTime);
-disp(['TOTAL RUN TIME IS ' datestr(RunTime,'HH:MM:SS')])
+    
+end  % end for/parfor choice
 
 % transform outputs to matrices
 Conc        = cell2mat(Conc(:));
 Time        = cell2mat(Time(:));
 StepIndex   = cell2mat(StepIndex(:));
-RepIndex    = cell2mat(RepIndex(:));
 k_solar     = cell2mat(k_solar(:));
 SZA_solar   = cell2mat(SZA_solar(:));
 days_solar  = cell2mat(days_solar(:));
@@ -534,11 +528,8 @@ Conc = breakout(Conc,Cnames); %to structure
 
 % Time
 if ~isempty(ModelOptions.TimeStamp)
-    ModelOptions.TimeStamp = ModelOptions.TimeStamp(:); %ensure column vector
-    Time2Rep = repmat(ModelOptions.TimeStamp,ModelOptions.Repeat,1);
-    dTime = median(diff(Time2Rep)); %assumes equal spacing
-    if length(Time2Rep) == length(RepIndex)
-        Time = Time2Rep + (max(Time2Rep)+dTime)*(RepIndex-1); %force Time to not repeat
+    if length(ModelOptions.TimeStamp) == length(Time)
+        Time = ModelOptions.TimeStamp(:);
     else
         warning('F0AM_ModelCore:UnusedInput',...
             'ModelOptions.TimeStamp and output Time are different lengths. Time not overwritten.')
@@ -550,7 +541,7 @@ end
 %%%%%PUT VARIABLES INTO STRUCTURE%%%%%
 iRO2 = Chem.iRO2; %legacy v3.1. To be removed in the future.
 vars ={'Met','InitConc','BkgdConc','ModelOptions','SolarParam',...
-    'Cnames','Conc','Time','StepIndex','RepIndex','iRO2','Chem'};
+    'Cnames','Conc','Time','StepIndex','iRO2','Chem'};
 S = struct();
 for i=1:length(vars)
     S(1).(vars{i}) = eval(vars{i});
@@ -559,11 +550,15 @@ S = orderfields(S);
 
 %%%%%SAVING%%%%%
 if strcmpi(ModelOptions.SavePath,'DoNotSave')
-    disp('Model output not saved.')
+    if ModelOptions.Verbos >= 1
+        disp('MODEL OUTPUT NOT SAVED.')
+    end
 else
     SaveName = GenFilePath(ModelOptions.SavePath);
-    disp(['SAVED AS ' SaveName])
     save(SaveName,'S');
+    if ModelOptions.Verbose >= 1
+    	disp(['SAVED AS ' SaveName])
+    end
 end
 
 if ModelOptions.DeclareVictory
@@ -571,5 +566,10 @@ if ModelOptions.DeclareVictory
 end
 
 warning(warnstate) %go back to user warning settings
+
+RunTime = (now - StartTime);
+if ModelOptions.Verbose >= 1
+    disp(['TOTAL RUN TIME IS ' datestr(RunTime,'HH:MM:SS')])
+end
 
 
