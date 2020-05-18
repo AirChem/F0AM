@@ -14,7 +14,7 @@
 % AddSpecies
 
 i=i+1;
-Rnames{i} = 'CH3O2 + OH = 0.8HO2 + 0.8CH3O + 0.2CH3OH';
+Rnames{i} = 'CH3O2 + OH = 0.93HO2 + 0.93CH3O + 0.07CH3OH';
 k(:,i) = 1.6e-10; %Assaf, JPC-A (2015)
 Gstr{i,1} = 'CH3O2'; Gstr{i,2} = 'OH';
 fCH3O2(i) = -1; fOH(i) = -1; fHO2(i) = 0.93; fCH3O(i) = 0.93; fCH3OH(i) = 0.07;
