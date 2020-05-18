@@ -6,9 +6,9 @@ function [Met_int,InitConc_int,BkgdConc_int] = ...
 % Useful if, for example, you have hourly observations but want the model to update every 10 minutes.
 % Currently, interpolation operates only on non-scalar numeric values.
 % Default interpolation method is linear.
-% EXTRAPOLATION:
-% If any values of Time_int lie outside the range of Time, extraplation is required.
-% By default, linear extrapolation is used.
+%
+% Extrapolation is not allowed. Time_int must be within the limits of Time.
+% 
 % A special case is a diurnal cycle that is (conceptually) meant to repeat.
 % In this case, specifying the "circularFlag" input will allow for interpolate between the last and
 % first points of input "Time." So, if Time = 0:23 and Time_int = 0:0.5:23.5, then the output point
@@ -26,12 +26,18 @@ function [Met_int,InitConc_int,BkgdConc_int] = ...
 % interpolated.
 %
 % 20200414 GMW
+% 20200515 GMW Fixed problem with interpolation/extrapolation for circular case
 
 if nargin<6, circularFlag = 0; end
 
+if ~circularFlag
+    assert(min(Time_int) >= min(Time),'InputInterp:TimeBounds','Extrapolation not allowed. min(Time_int) must be >= min(Time).')
+    assert(max(Time_int) <= max(Time),'InputInterp:TimeBounds','Extraploation not allowed. max(Time_int) must be <= max(Time).')
+end
+
 if circularFlag
     dT = median(diff(Time));
-    Time(end+1) = Time(end) + dT;
+    Time = [Time(1)-dT; Time(:); Time(end)+dT];
 end
 
 Met_int = interpCells(Met);
@@ -47,10 +53,10 @@ BkgdConc_int = interpCells(BkgdConc);
             if isnumeric(x) && ~isscalar(x)
                 
                 if circularFlag
-                    x(end+1) = x(1);
+                    x = [x(end); x(:); x(1)];
                 end
                 
-                X_int{i,2} = interp1(Time,x(:),Time_int,'linear','extrap');
+                X_int{i,2} = interp1(Time,x(:),Time_int,'linear');
             end
         end
     end
