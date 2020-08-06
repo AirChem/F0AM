@@ -22,8 +22,8 @@ warning('off','backtrace')
 
 % store names for duplicate checking later
 Mnames = Met(:,1);
-Inames = Met(:,2);
-Bnames = Met(:,3);
+Inames = InitConc(:,1);
+Bnames = BkgdConc(:,1);
 
 % convert inputs to structures
 holdFlag = logical(cell2mat(InitConc(:,3)));
