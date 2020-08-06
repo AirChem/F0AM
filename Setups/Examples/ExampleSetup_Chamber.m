@@ -137,8 +137,7 @@ yieldWindow = [500 1000]; %time window, seconds
 PlotYield(S1,'C5H8',{'C5HPALD1','C5HPALD2'},yieldWindow);
 
 %% EVENTS
-% Finally, let's say you continue the sec
-ond experiment for longer, but with more lights.
+% Finally, let's say you continue the second experiment for longer, but with more lights.
 
 [InitConc,Met] = Run2Init(S2,length(S2.Time)); %get initialization values
 

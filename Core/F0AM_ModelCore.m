@@ -20,6 +20,11 @@ StartTime = now;
 warnstate = warning('query','backtrace');
 warning('off','backtrace')
 
+% store names for duplicate checking later
+Mnames = Met(:,1);
+Inames = Met(:,2);
+Bnames = Met(:,3);
+
 % convert inputs to structures
 holdFlag = logical(cell2mat(InitConc(:,3)));
 Met      = breakout(Met(:,2),Met(:,1));
@@ -74,7 +79,7 @@ end
 %% MET DEFAULTS/CHECKS
 
  % check for duplicate constraints
-rp = repval(fieldnames(Met));
+rp = repval(Mnames);
 if ~isempty(rp)
     error('F0AM_ModelCore:InvalidInput','Duplicate Met variable %s.',rp{1})
 end
@@ -182,12 +187,12 @@ Snames = fieldnames(SolarParam);
 %% INITCONC, BKGDCONC CHECKS
 
 % Check for duplicate constraints
-rp = repval(fieldnames(InitConc));
+rp = repval(Inames);
 if ~isempty(rp)
     error('F0AM_ModelCore:InvalidInput','Duplicate InitConc variable %s.',rp{1})
 end
 
-rp = repval(fieldnames(BkgdConc));
+rp = repval(Bnames);
 if ~isempty(rp)
     error('F0AM_ModelCore:InvalidInput','Duplicate BkgdConc variable %s.',rp{1})
 end

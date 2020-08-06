@@ -1,4 +1,4 @@
-function SpRates = PlotRatesGroup_Peng(Spname,S,n2plot,varargin)
+function SpRates = PlotRatesGroup(Spname,S,n2plot,varargin)
 % PENG
 % Generates a plot of production and loss rates vs time for a chemical family.
 % Input Spnmae should be a  cell array (the species cannot 
@@ -40,14 +40,6 @@ function SpRates = PlotRatesGroup_Peng(Spname,S,n2plot,varargin)
 %
 % OUTPUT (optional) is a structure containing names and rates of plotted reactions.
 %
-% 20120319 GMW
-% 20120725 GMW    Updated for UWCMv2.1. Now also includes dilution term.
-% 20121028 GMW    Modified behavior of FilterEquilibria code to better handle cases where net
-%                 reaction rates change sign (as per suggestion of SBH).
-% 20131126 GMW    Moved Equilibrium filter code to ExtractRates.
-% 20151106 GMW    Updates for F0AMv3.
-%                 Changed options for ptype and sumEq to name-value pairs.
-%                 Added options for unit and scale.
 % 20200427  Peng  Born from a marriage of PlotRates.m and PlotConcGroup.m
 
 %%%%%DEAL WITH INPUTS%%%%%
@@ -180,7 +172,7 @@ if sum(iL)<=n2plot
     L2plot = Lall;
 else
     [MaxRate,iMax] = max(max(Lall(:,n2plot+1:end))); %identify largest contribution in "other"
-    disp(['PlotRatesGroup: ' Spname])
+    disp(['PlotRatesGroup: ' Spname{1}])
     disp(['  Number of Loss Reactions in "other" = ' num2str(sum(iL)-n2plot)])
     disp(['  Largest contribution in "other" is ' Lnames{iMax} ' at ' num2str(MaxRate) ' ' unitS])
     

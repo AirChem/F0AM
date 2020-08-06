@@ -36,7 +36,6 @@ MetInfo = {...
     'PPFD'          0               0;...    % umol/m^2/s
     'LAI'           0               1;...    % m^2/m^2
     
-    
     % AEROSOL (ORGANIC/GENERIC)
     'rpaerosol'     0               0;... % mean aerosol particle radius, cm
     'Naerosol'      0               0;... % aerosol number density, #/cm^3
@@ -56,6 +55,8 @@ MetInfo = {...
     'Sice'          0               0;... % mean ice particle surface area concentration cm^2/cm^3
     'Vice'          0               0;... % mean ice particle volume concentration cm^3/cm^3
 
+    % AEROSOL COMPOSITION
+    'pNO3'          0               0;... % particulate nitrate, molec/cm^3
     };
 
 
