@@ -4,6 +4,22 @@ Questions? --> Glenn Wolfe, f0am.model@gmail.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+20200501 TO ...
+
+Post v4 release bug fixes and changes
+
+20200822
+ - Added additional error message to inform users to modify InitializeMet if they need more Met variables.
+
+20200805
+ - Fixed a bug that caused failure to throw error when duplicate inputs are in Met, InitConc, BkgdConc.
+
+20200517
+ - Fixed a bug in InputInterp.m regarding extrapolation.
+ - Added a new tool, MergeRuns.m, that tacks together multiple output structures (like reverse of SplitRun)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 20190108 TO 20200430
 
 F0AMv4

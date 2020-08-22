@@ -103,8 +103,15 @@ end
 
 % check other fields
 FieldInfo = InitializeMet;
-Met = CheckStructure(Met,FieldInfo,'J');
-if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end % why?
+try
+    Met = CheckStructure(Met,FieldInfo,'J');
+catch ME
+    msg = ' To add new variables to Met, modify the list in InitializeMet.m.';
+    causeException = MException('F0AM:UnspecifiedInput',msg);
+    ME = addCause(ME,causeException);
+    rethrow(ME)
+end 
+% if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end % why? commented out 20200822
 Met = Check4NanNeg(Met);
 
 % j correction checks
