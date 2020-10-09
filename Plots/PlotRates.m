@@ -43,6 +43,7 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 % 20151106 GMW    Updates for F0AMv3.
 %                 Changed options for ptype and sumEq to name-value pairs.
 %                 Added options for unit and scale.
+% 20200928 GMW    Fixed bug for plotting in case of no P or L reactions.
 
 %%%%%DEAL WITH INPUTS%%%%%
 %options
@@ -149,8 +150,8 @@ else
     Pnames = [Pnames(1:n2plot);'Other'];
 end
 
-if isempty(P2plot),P2plot=nan; end
-if isempty(L2plot),L2plot=nan; end
+if isempty(P2plot),P2plot=nan(size(Time)); end
+if isempty(L2plot),L2plot=nan(size(Time)); end
 
 %%%%%DILUTION%%%%%
 dil = S.Chem.DilRates.(Spname);
