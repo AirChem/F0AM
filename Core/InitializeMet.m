@@ -24,7 +24,7 @@ MetInfo = {...
     'tgauss'        0              inf;... % initial timescale for Gaussian dilution, s
     
     % PHOTOLYSIS
-    'SZA'           0               [];...   % solar zenith angle, degrees
+    'SZA'           0               30;...  % solar zenith angle, degrees
     'jcorr'         0               1;...   % j-value correction factor
     'LFlux'         0               [];...  % actinic flux spectrum
     'ALT'           0               500;... % altitude, m asl

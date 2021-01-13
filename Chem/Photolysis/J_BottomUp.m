@@ -11,7 +11,7 @@ function J = J_BottomUp(LFlux,T,P,J2plot)
 % INPUTS:
 % LFlux: a string specifying a text file with two tab-delimited columns of data.
 %       The first column should be wavelength (in nm).
-%       The second column should be photon flux (in photons/cm^2/s).
+%       The second column should be photon flux (in photons/cm^2/s/nm).
 %       Other format options are also available; see IntegrateJ.m for more info.
 % T: Temperature, K
 % P: Pressure, mbar

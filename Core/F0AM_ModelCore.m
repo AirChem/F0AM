@@ -506,6 +506,15 @@ end
 
 %% POST-RUN CALCULATIONS
 
+% Deal with negatives in Conc
+if any(Conc < -1,'all') %molec/cm^3
+    i = any(Conc < -1 , 1);
+    warning('F0AM_ModelCore:NegativeOutput',...
+        'Negative concentrations exceeding -1 molec/cm^3. Investigation recommended. Species:')
+    fprintf('%s\r',Cnames{i})
+end
+Conc(Conc < 0) = 0;
+
 %Chemical rates
 Conc(:,2) = sum(Conc(:,Chem.iRO2),2); %RO2
 G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2));
