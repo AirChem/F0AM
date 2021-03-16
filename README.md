@@ -2,7 +2,7 @@
 
 Framework for 0-D Atmospheric Modeling
 
-Most recent public release: [**v4.0.2**](https://github.com/AirChem/F0AM/releases/latest)
+Most recent public release: [**v4.0.3**](https://github.com/AirChem/F0AM/releases/latest)
 
 Contact: glenn.m.wolfe
 
@@ -23,7 +23,7 @@ If F0AM is used to support a scientific publication, please cite the following r
 In addition, we ask that you send an email to Glenn so that the paper may be added to our [List of Publications Using F0AM](https://docs.google.com/spreadsheets/d/1fd7mWTzMiWuuqRG9eI9g0iYyt7DymLIVpDv_rArt5Z8/edit#gid=0).
 
 ### Questions and Issues
-It is preferred that all questions, suggestions, bug reports, insults, etc. be posted to the public [F0AM users group](https://groups.google.com/forum/#!forum/f0amusers). If your question is sensitive or you prefer to remain anonymous, you can alternatively email the contact listed above. Please be warned that NASA currently prohibits bi-lateral communication with designated countries, including China, so Glenn may not be allowed to converse with you via email. But anyone can use the forum!
+It is preferred that all questions, suggestions, bug reports, insults, etc. be posted to the public [F0AM users group](https://groups.google.com/forum/#!forum/f0amusers). If your question is sensitive or you prefer to remain anonymous, you can alternatively email the contact listed above. NASA currently prohibits bilateral communication with designated countries, including China, so Glenn may not be allowed to converse with you via email. But anyone can use the forum!
 
 ### New Users
 To get started, download the most recent public release of the model (link at top of this document). In the main directory of F0AM you will find a file called "F0AM_GettingStarted.pdf" that will guide you through the intitial steps. Read the description paper, read the user manual, and peruse/run the example setup scripts. Remember that models are like any other research tool - they take time to learn, and they break often.
