@@ -206,7 +206,7 @@ end
 ylabel(ax1,[Spname ' Rates (' unitS ')'])
 xlabel(ax1,'Model Time')
 
-tspacing = nanmean(diff(Time));
+tspacing = mean(diff(Time),'omitnan');
 xlim([min(Time)-tspacing max(Time)+tspacing])
 ylim(1.1*[-ylimit ylimit]);
 

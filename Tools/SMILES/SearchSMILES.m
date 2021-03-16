@@ -21,6 +21,7 @@ function Q = SearchSMILES(pattern,Cnames,MCMversion)
 %   nX:     number of a given atom, where X = C,O,N,H,S,F,Cl,Br,I
 %
 % 20130104 GMW
+% 20210303 GMW  Added alkoxyRadical option
 %
 %%%%%DIRECTIONS FOR CREATING MCMSpeciesInfo.mat%%%%%
 % 1) Go to MCM website and select ALL VOCs
@@ -63,6 +64,8 @@ switch pattern
         p = '^OOC\(=O\)|C\(=O\)OO$';
     case 'peroxyRadical'
         p = 'O\[O\]|\[O\]O';
+    case 'alkoxyRadical'
+        p = 'C\[O\]|\[O\]C';
     case 'APRadical'
         p = ['C\(=O\)O\[O\]|'...
             '\[O\]OC\(=O\)'];

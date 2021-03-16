@@ -38,9 +38,14 @@ function SpRates = PlotRatesGroup(Spname,S,n2plot,varargin)
 %               In this case, the "dilution" term is normalized to total loss.
 %               Default: 1
 %
+%           PlotRatesGroup(...,'plotme',value)
+%               Specifies whether to generate plot (1) or not
+%               Default: 1
+%
 % OUTPUT (optional) is a structure containing names and rates of plotted reactions.
 %
 % 20200427  Peng  Born from a marriage of PlotRates.m and PlotConcGroup.m
+% 20210304 GMW      Added plotme option
 
 %%%%%DEAL WITH INPUTS%%%%%
 %options
@@ -64,6 +69,7 @@ varInfo = {...
     'scale'     1           [];...
     'ptype'     'fill'      {'fill','bar','line'};...
     'sumEq'     0           [0 1];...
+    'plotme'    1           [0 1];...
      };
 ParsePairs(varargin,varInfo);
 
@@ -216,60 +222,63 @@ end
 dil(isnan(dil)) = 0;
 
 %%%%%PLOTS%%%%%
-figure;
-
-load fillcolors.mat
-colormap(fillcolors);
-
-ax1 = axes;
-ax2 = axes('Position',get(ax1,'Position'),'Color','none','Visible','off');
-linkaxes([ax1,ax2])
-hold on
-
-switch ptype
-    case 'fill'
-        area(ax1,Time,P2plot)
-        area(ax2,Time,L2plot)
-        ylimit = max([max(abs(sum(L2plot,2))) max(sum(P2plot,2)) max(abs(dil))]);
-    case 'line'
-        plot(ax1,Time,P2plot,'LineWidth',2)
-        plot(ax2,Time,L2plot,'LineWidth',2)
-        plot([min(Time) max(Time)],[0 0],'k','LineWidth',2)
-        ylimit = max([max(max(abs(L2plot))) max(max(P2plot)) max(abs(dil))]);
-    case 'bar'
-        bar(ax1,Time,P2plot,'stack');
-        bar(ax2,Time,L2plot,'stack');
-        ylimit = max([max(abs(sum(L2plot,2))) max(sum(P2plot,2)) max(abs(dil))]);
-end
-
-%Add dilution
-if any(dil)
+if plotme
+    figure;
+    
+    load fillcolors.mat
+    colormap(fillcolors);
+    
+    ax1 = axes;
+    ax2 = axes('Position',get(ax1,'Position'),'Color','none','Visible','off');
+    linkaxes([ax1,ax2])
     hold on
-    plot(Time,dil,'k--','LineWidth',2);
-    Lnames = [Lnames; 'Dilution'];
+    
+    switch ptype
+        case 'fill'
+            area(ax1,Time,P2plot)
+            area(ax2,Time,L2plot)
+            ylimit = max([max(abs(sum(L2plot,2))) max(sum(P2plot,2)) max(abs(dil))]);
+        case 'line'
+            plot(ax1,Time,P2plot,'LineWidth',2)
+            plot(ax2,Time,L2plot,'LineWidth',2)
+            plot([min(Time) max(Time)],[0 0],'k','LineWidth',2)
+            ylimit = max([max(max(abs(L2plot))) max(max(P2plot)) max(abs(dil))]);
+        case 'bar'
+            bar(ax1,Time,P2plot,'stack');
+            bar(ax2,Time,L2plot,'stack');
+            ylimit = max([max(abs(sum(L2plot,2))) max(sum(P2plot,2)) max(abs(dil))]);
+    end
+    
+    %Add dilution
+    if any(dil)
+        hold on
+        plot(Time,dil,'k--','LineWidth',2);
+        Lnames = [Lnames; 'Dilution'];
+    end
+    
+    %Plot decorations
+    if ~isempty(Pnames)
+        legend(ax1,Pnames,'Location','NorthEast')
+    end
+    
+    if ~isempty(Lnames)
+        legend(ax2,Lnames,'Color','w','Location','SouthEast')
+    end
+    
+    ylabel(ax1,[name ' Rates (' unitS ')'])
+    xlabel(ax1,'Model Time')
+    
+    tspacing = mean(diff(Time),'omitnan');
+    % xlim([min(Time)-tspacing max(Time)+tspacing]) % PENG
+    ylim(1.1*[-ylimit ylimit]);
+    
+    
+    set(ax2,'Position',get(ax1,'Position')) %need this to line up P and L plots
+    set(ax1,'Position',get(ax2,'Position'))
+    
+    purtyPlot
+    
 end
-
-%Plot decorations
-if ~isempty(Pnames)
-    legend(ax1,Pnames,'Location','NorthEast')
-end
-
-if ~isempty(Lnames)
-    legend(ax2,Lnames,'Color','w','Location','SouthEast')
-end
-
-ylabel(ax1,[name ' Rates (' unitS ')'])
-xlabel(ax1,'Model Time')
-
-tspacing = nanmean(diff(Time));
-% xlim([min(Time)-tspacing max(Time)+tspacing]) % PENG
-ylim(1.1*[-ylimit ylimit]);
-
-
-set(ax2,'Position',get(ax1,'Position')) %need this to line up P and L plots
-set(ax1,'Position',get(ax2,'Position'))
-
-purtyPlot
 
 %%%%%OUTPUT%%%%%
 if nargout

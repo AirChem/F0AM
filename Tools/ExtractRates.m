@@ -67,7 +67,7 @@ if sumEq
 end
 
 %%%%% SORT %%%%%
-rSpsum = nansum(rSp,1);
+rSpsum = sum(rSp,1,'omitnan');
 [rSpsum,n] = sort(rSpsum);
 rSp = rSp(:,n);
 rSpnames = rSpnames(n);
