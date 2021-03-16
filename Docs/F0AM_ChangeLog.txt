@@ -1,6 +1,13 @@
 
 This document provides a summary of changes made to Model code.
-Questions? --> Glenn Wolfe, f0am.model@gmail.com
+Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+v4.0.3
+20210316: Eliminated nansum/nanmean calls in a few plot functions
+	  Added a few options to PlotRatesGroup and PlotReactivity
+          Added alkoxyRadical option to SearchSMILES.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
