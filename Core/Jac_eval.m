@@ -44,20 +44,25 @@ conc(:,2) = sum(conc(:,iRO2),2); %sum RO2
 
 % partial derivatives for 1st-order reactions
 % f = k*x*y, then df/dx = k*y
-DratesDy1 = k.*conc(:,iG(:,2));
-DratesDy2 = k.*conc(:,iG(:,1));
+DratesDy1 = k.*conc(:,iG(:,2)).*conc(:,iG(:,3));
+DratesDy2 = k.*conc(:,iG(:,1)).*conc(:,iG(:,3));
+DratesDy3 = k.*conc(:,iG(:,1)).*conc(:,iG(:,2));
 
 % distribute derivatives
 % one row for each reaction
 % one column for each species
-Rxindex = [1:nRx 1:nRx]; 
-Spindex = [iG(:,1)' iG(:,2)'];
-DratesDy = sparse(Rxindex,Spindex,[DratesDy1 DratesDy2],nRx,nSp);
+Rxindex = [1:nRx 1:nRx 1:nRx]; 
+Spindex = [iG(:,1)' iG(:,2)' iG(:,3)'];
+DratesDy = sparse(Rxindex,Spindex,[DratesDy1 DratesDy2 DratesDy3],nRx,nSp);
 
 % correct second-order reactions
 % f = k*x*x, then df/dx = 2*k*x
-i2 = find(iG(:,1)==iG(:,2));
+i2 = iG(:,1)==iG(:,2);
 DratesDy(i2,iG(i2,1)) = 2*DratesDy(i2,iG(i2,1));
+i2 = iG(:,1)==iG(:,3);
+DratesDy(i2,iG(i2,1)) = 2*DratesDy(i2,iG(i2,1));
+i2 = iG(:,3)==iG(:,2);
+DratesDy(i2,iG(i2,3)) = 2*DratesDy(i2,iG(i2,3));
 
 % calculate Jacobian
 % f is matrix of stoichiometric coefficients for each species & reaction, dim = nRx x nSp

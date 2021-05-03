@@ -69,7 +69,7 @@ iG(iLR(lr==2),1) = 1;
 
 %% CHEMICAL RATES
 conc(:,2) = sum(conc(:,iRO2),2); %calculate sum of RO2 species
-G = conc(:,iG(:,1)).*conc(:,iG(:,2)); %1 column for each reaction
+G = conc(:,iG(:,1)).*conc(:,iG(:,2)).*conc(:,iG(:,3)); %1 column for each reaction
 rates = k.*G; %chemical rates
 dydt = rates*f; %multiply rates for each reactant by coefficients and sum up
 

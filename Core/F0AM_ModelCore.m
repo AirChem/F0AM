@@ -518,7 +518,7 @@ end
 Conc(Conc < 0) = 0;
 
 %Chemical rates
-G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2));
+G = Conc(:,Chem.iG(:,1)).*Conc(:,Chem.iG(:,2)).*Conc(:,Chem.iG(:,3));
 Glr = min(Conc(:,Chem.iG(Chem.iLR,1)),Conc(:,Chem.iG(Chem.iLR,2))); %limiting reagent replacement
 G(:,Chem.iLR) = Glr;
 Mbig = Met.M(StepIndex);

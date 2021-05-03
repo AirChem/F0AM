@@ -4,6 +4,14 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.1
+20210503: Added ability to handle three-body reactions (with all species in mechanism)
+	  Combined PlotRates and PlotRatesGroup, fixed family indexing in this function
+	  Changed halogen names in Sherwen mechanism to be consistent with other mechanisms
+          Updated user manual
+          
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.0.3
 20210316: Eliminated nansum/nanmean calls in a few plot functions
 	  Added a few options to PlotRatesGroup and PlotReactivity
