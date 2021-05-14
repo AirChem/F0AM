@@ -64,6 +64,7 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %                   Added plotme option
 %                   Added iRx outputs
 %                   Added input handling for Spname
+% 20210514 GMW      Fixed bug in dilution calculation for multiple species.
 
 
 %%%%%DEAL WITH INPUTS%%%%%
@@ -199,7 +200,7 @@ if sum(iL) <= n2plot
     L2plot = Lall;
 else
     [MaxRate,iMax] = max(max(Lall(:,n2plot+1:end))); %identify largest contribution in "other"
-    disp(['PlotRatesGroup: ' Spname{1}])
+    disp(['PlotRates: ' Fname])
     disp(['  Number of Loss Reactions in "other" = ' num2str(sum(iL)-n2plot)])
     disp(['  Largest contribution in "other" is ' Lnames{iMax} ' at ' num2str(MaxRate) ' ' unitS])
     
@@ -234,7 +235,17 @@ else
 end
 
 %%%%%DILUTION%%%%%
-dil = S.Chem.DilRates.(Spname{1});
+if iscell(Spname)
+    dil = S.Chem.DilRates.(Spname{1});
+    if length(Spname) > 1
+        for i = 2:length(Spname)
+            dil = dil + S.Chem.DilRates.(Spname{i});
+        end
+    end
+else
+    dil = S.Chem.DilRates.(Spname);
+end
+
 if scale(1)==0, dil = dil./-Lsum;
 else,           dil = dil.*scale;
 end
