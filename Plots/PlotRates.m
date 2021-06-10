@@ -10,8 +10,8 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 % Spname: Two options here.
 %    (1) a single string or cell array specifying name of species or 
 %    (2) cell array of family info. First cell is family name, remaining cells are family members.
-%         Family name cannot be a species in mechanism, e.g. {'HOx','OH','HO2'}.
-%         Faimily members can also have multipliers, e.g. {'NOx','NO','NO2','NO3','2*N2O5'}. In this
+%         The family name cannot be a species in mechanism, e.g. {'HOx','OH','HO2'}.
+%         Family members can also have multipliers, e.g. {'NOx','NO','NO2','NO3','2*N2O5'}. In this
 %         case, rates for reactions producing or destroying those would count double.
 % n2plot: number of individual rates to plot. 
 % varargin: One can specify several options as name-value pairs:
@@ -47,8 +47,8 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %    SpRates.Prod:      matrix of production reaction rates, dimensions nT x nRx
 %    SpRates.Lnames:    cell array of reaction names (reactants only) for loss reactions
 %    SpRates.Loss:      matrix of loss reactions rates, dimensions nT x nRx
-%    SpRates.iRx_Loss:  index for loss reactions in original S.Chem structure, sorted like Pnames
-%    SpRates.iRx_Prod:  index for production reactions in original S.Chem structure, sorted like Lnames
+%    SpRates.iRx_Loss:  index for loss reactions in original S.Chem structure, sorted like Lnames
+%    SpRates.iRx_Prod:  index for production reactions in original S.Chem structure, sorted like Pnames
 %
 % 20120319 GMW      Created.
 % 20120725 GMW      Updated for UWCMv2.1. Now also includes dilution term.
@@ -225,7 +225,7 @@ if sum(iP) <= n2plot
     P2plot = Pall;
 else
     [MaxRate,iMax] = max(max(Pall(:,n2plot+1:end))); %identify largest contribution in "other"
-    disp(['PlotRates: ' Spname])
+    disp(['PlotRates: ' Fname])
     disp(['  Number of Production Reactions in "other" = ' num2str(sum(iP)-n2plot)])
     disp(['  Largest contribution in "other" is ' Pnames{iMax} ' at ' num2str(MaxRate) ' ' unitS])
     
