@@ -4,6 +4,13 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.1.1
+20210614: Modified FAC2F0AM.m to work with newer (and older) MCM facsimile files.
+	  Bug/typo fixes in PlotRates.m (including adjustment to dilution rate calculation)
+	  Typo fix in ExampleSetup_FlightSS.m
+      
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.1
 20210503: Added ability to handle three-body reactions (with all species in mechanism)
 	  Combined PlotRates and PlotRatesGroup, fixed family indexing in this function

@@ -19,6 +19,8 @@ function FAC2F0AM(MCM_flnm,save_flnm)
 %               - Added RO2 and hv to reaction names
 %               - Disentangled reaction block-building and writing of script.
 %               - Renamed from MCMreadnwrite.m to FAC2F0AM.m
+% 20210614 GMW  Changed method of scrolling through header/comment lines to make it more robust
+%                against future changes (I hope).
 
 %--------------------------------------------------------------------
 % READ MCM FACSIMILE FILE
@@ -53,13 +55,8 @@ end
 RO2names = regexp(RO2names,'\<*\w*\>','match'); %cell array of RO2 names
 RO2names(1) = []; %remove "RO2" from names
 
-% skip s'more comments
-while strncmp(l,'*',1)
-    l = fgetl(fid);
-end
-
 %grab number of species and reactions
-rstart = ftell(fid)-length(l)-2; %start of reactions
+rstart = ftell(fid);
 fseek(fid,-50,'eof');
 l=fgetl(fid);
 n = str2num(char(regexp(l,'\d*','match')));
@@ -67,18 +64,23 @@ nSp = n(1); %number of species
 nRx = n(2); %number of reactions
 fseek(fid,rstart,'bof');
 
+% skip down to reactions
+while ~strncmp(l,'%',1)
+    l = fgetl(fid);
+end
+
 %read reactions and parse into cell arrays
 k = cell(nRx,1);
 Rnames = cell(nRx,1);
 for i=1:nRx
-    l = fgetl(fid);
-    if l(end)~=';'
+    if l(end) ~= ';'
         l = [l ' ' fgetl(fid)]; %semicolon denotes end of reaction
     end
     l = l(3:end-2); %hack off beginning and end characters
     s = regexp(l,':','start');
     k{i} = l(1:s-2);
     Rnames{i} = l(s+2:end);
+    l = fgetl(fid);
 end
 fclose(fid);
 
