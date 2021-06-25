@@ -1,7 +1,8 @@
-function [Reactivity,ReactivityNames] = PlotReactivity(Spname,S,Rct2plot,varargin)
+function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,varargin)
 % function [Reactivity,ReactivityNames] = PlotReactivity(Spname,S,Rct2plot,varargin)
 % Generates a plot of speciated reactivity (inverse lifetime) versus time.
-% Typically used to look at oxidant reactivity (e.g. OH or O3).
+% Typically used to look at oxidant reactivity (e.g. OH or O3.. can also pass 
+% 'hv' as a reactant to see loss relative to photolysis).
 %
 % INPUTS:
 % Spname: name of species of interest.
@@ -45,6 +46,21 @@ function [Reactivity,ReactivityNames] = PlotReactivity(Spname,S,Rct2plot,varargi
 %               1 = plot, 0 = don't.
 %               Default: 1
 %
+%           PlotReactivity(...,'parent',axis)
+%               Specifies the axis handle you want to plot on (useful for putting
+%               this into subfigures... Default is to create a new figure. 
+%
+%           PlotReactivity(...,'cmapname','jet')
+%               Specifies the colormap you want to use by name for
+%               plotting. 
+%            
+%           cols=rand(n,3); % Random color array. Must be n x 3 size. where
+%                             n = length(Rct2plot) +1)
+%           PlotReactivity(...,'cols',cols)
+%               Specifies an n x 3 size matrix of color values (between
+%               0-1) for plotting colors explicitly. Useful if you want to 
+%               plot with consistent colors across figures. 
+%
 % OUTPUTS:
 % Reactivity: matrix of reactivities.
 %             One row for each model point, one column for each reactivity class.
@@ -61,9 +77,14 @@ function [Reactivity,ReactivityNames] = PlotReactivity(Spname,S,Rct2plot,varargi
 % 20120904 GMW    Added output arguments.
 % 20151118 GMW    Updated for F0AMv3, added options.
 % 20210226 GMW    Added option to plot sum or all reactants and disable plotting.
+% 20210623 JDH    Added 'parent' option to plot to a specific subplot/ axis. &
+%                 options to pass either a cmap name or array of colors size cols[:,3]
+%                 explicitly as the colors of plots. 
+% 20210623 JDH    Added option to plot 'hv' as a reactant 
+%                (so it would show photolysis rxns seperate from  'Other' 
 
 
-%%%%%DEAL WITH INPUTS%%%%%
+%%%%% DEAL WITH INPUTS %%%%%
 
 % check inputs
 allflag = 0; sumflag = 0;
@@ -86,10 +107,23 @@ varInfo = {...
     'ptype'     'fill'      {'fill','bar','line'};...
     'sumEq'     0           [0 1];...
     'plotme'    1           [0 1];...
+    'parent'    0           [];...   
+    'cols'      [],          [] 
+    'cmapname'  '',         []; 
     };
 ParsePairs(varargin,varInfo);
 
-%get unit multiplier and string
+% Error checking some of the vargin
+if ~isstring(cmapname) && ~ischar(cmapname) && isempty(cmapname)
+    error('PlotReactivity: cmapname must be a string or char.');
+end
+if ~isempty(cols)  % Make sure color arr is correct length 
+    if width(cols)~=3 ; error('PlotReactivity: cols must be a 3 column array.'); end 
+    if max(max(cols))>1;error('PlotReactivity: cols must not contain values >1.'); end
+    if min(min(cols))<0;error('PlotReactivity: cols must not contain values <0.'); end
+end
+
+% Get unit multiplier and string
 switch unit
     case 's',   unitX = 1;       unitS = 's^-^1';
     case 'm',   unitX = 60;      unitS = 'm^-^1';
@@ -103,18 +137,18 @@ elseif scale~=1
 end
 scale = unitX*scale;
 
-%%%%%BREAKOUT VARIABLES%%%%
+%%%%% BREAKOUT VARIABLES %%%%
 Cnames = S.Cnames;
 rates  = S.Chem.Rates;
 iG     = S.Chem.iG;
-Time   = S.Time;
+Time   = S.Time; 
 CSp    = S.Conc.(Spname);
 
 CSp(CSp==0) = 1e-14; %avoid /0 nan issues in reactivity calculation
 
 nTm = size(rates,1);       %number of time-points
 
-%%%%REMOVE GROUP NAMES AND GENERATE LEGEND%%%%%
+%%%% REMOVE GROUP NAMES AND GENERATE LEGEND %%%%%
 
 if sumflag || allflag
     Rct2plot = Cnames;
@@ -136,7 +170,7 @@ else
     lnames{end} = 'Other';
 end
 
-%%%%%GRAB RATES AND REACTANTS%%%%%
+%%%%% GRAB RATES AND REACTANTS %%%%%
 [rSp,rSpnames,iRx] = ExtractRates(Spname,S,sumEq);
 iL = sum(rSp,1)<0; %only want loss terms
 nL = sum(iL);
@@ -145,6 +179,12 @@ rSpnames = rSpnames(iL);
 iRx = iRx(iL);
 Rctnames = Cnames(iG(iRx,:)); %2-column cell array of reactant names for each reaction
 
+% Take care of photolysis reactions (look for 'hv' in reaction)... 
+j_rxns= find(contains(rSpnames,'hv')); 
+for hv=1:length(j_rxns)
+    if contains(Rctnames(j_rxns(hv), 2),'ONE')==1 ;Rctnames(j_rxns(hv), 2)={'hv'}; end 
+end 
+
 %scale
 if scale(1)==0,         Reactivity = Reactivity./repmat(sum(Reactivity,2),1,nL);
 elseif length(scale)>1, Reactivity = Reactivity.*repmat(scale,1,nL);
@@ -152,7 +192,7 @@ else                    Reactivity = Reactivity.*scale;
 end
 Reactivity(isnan(Reactivity)) = 0; %potential for NaNs in normalizing
 
-%%%%%%COMBINE REACTIONS FOR SPECIFIED REACTANTS%%%%%
+%%%%%% COMBINE REACTIONS FOR SPECIFIED REACTANTS %%%%%
 R2plot = nan(nTm,nRx);
 iUsed=[];
 for i=1:length(Rct2plot)
@@ -167,7 +207,7 @@ for i=1:length(Rct2plot)
     end
 end
 
-%%%%%DEAL WITH OTHER REACTANTS OR NON-REACTIVE SPECIES%%%%%
+%%%%% DEAL WITH OTHER REACTANTS OR NON-REACTIVE SPECIES %%%%%
 if allflag
     sumR = sum(R2plot,1);
     junk = sumR == 0;
@@ -190,32 +230,64 @@ else
     R2plot(:,end) = sum(ReactivityOther,2);
 end
 
-%%%%%PLOT%%%%%
+%%%%% PLOT %%%%%
 if plotme
-    figure;
-    load fillcolors.mat
-    colormap(fillcolors);
+    
+    if parent == 0 % no axis was passed, create a new figure. 
+        figure;
+        ax=gca;% parent axis is just the one we made. 
+    else
+        tf= isa(parent,'matlab.graphics.axis.Axes'); % make sure user passed axis handle.
+        if tf== 0; error("PlotReactivity: 'parent' must be an axis handle."); end  
+        ax= parent; % assign axis to plot on as the handle passed. 
+    end 
+    
+    % Define # of discrete colors in the user provided cmapname based on R2Plot. 
+    if isempty(cols) && ~isempty(cmapname)
+        cmap=colormap(cmapname); % Load cmap
+        n=length(R2plot(1,:)); n2=length(cmap); %// number discrete cols needed & # have. 
+        cols=cmap(1:floor(n2/n):n2, :); % Select n discrete colors you need. 
+    end 
+    
+    if length(cols) < length(R2plot(1,:)) 
+        % If weren't passed enough cols, then add the # you need to avoid plotting errors.  
+        needed=length(R2plot(1,:))- length(cols); 
+        cols=[cols; rand(needed, 3)];
+        disp("PlotReactivity: Needed "+string(needed)+ ...
+             "more colors in 'cols', so appending random colors. "+ ... 
+             "Pass more if you would like to avoid this." ); 
+    end
+         
+    % No colors explicitly passed. Load default fillcolors as cmap. 
+    % if cols==0 && length(cmapname)==0; load 'fillcolors.mat'; cols=colormap(fillcolors); end 
     
     switch ptype
         case 'fill'
-            area(Time,R2plot);
+            h=area(Time,R2plot, 'Parent', ax);
         case 'line'
-            plot(Time,R2plot,'LineWidth',2)
+            h=plot(Time,R2plot,'LineWidth',2, 'Parent', ax);
         case 'bar'
-            bar(Time,R2plot,'stack');
+            h= bar(Time,R2plot,'stack', 'Parent', ax);
     end
+
+    if width(cols)==3 % Apply the colors you wanted to items in handle.
+        for i =1:length(h)
+            set(h(i),'FaceColor',cols(i,:))
+        end
+    end 
     
     %Plot Decorations
-    xlabel('Model Time');
-    ylabel([Spname ' reactivity (' unitS ')'])
-    legend(lnames)
+    xlabel(ax,'Model Time');
+    ylabel(ax,[Spname ' reactivity (' unitS ')']);
+    legend(ax,lnames);
     
     tspacing = mean(diff(Time),'omitnan');
     xlim([min(Time)-tspacing max(Time)+tspacing])
-    
     purtyPlot
-    
+
 end
+
+grid on
 
 %%%%% OUTPUT %%%%%
 if nargout

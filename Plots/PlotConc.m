@@ -1,4 +1,4 @@
-function PlotConc(Spname,Splot,varargin)
+function [ax]=PlotConc(Spname,Splot,varargin)
 % function PlotConc(Spname,Splot,varargin)
 % Script for generating time-series plots to compare the same species from multiple model runs.
 % 
@@ -23,10 +23,18 @@ function PlotConc(Spname,Splot,varargin)
 %               Legend names.
 %               Value is a cell array of strings. Length should match # of model structures in Splot.
 %               Default: 1:length(Splot)
+%       
+%           PlotConc(...,'parent',axis)
+%               Specifies the axis handle you want to plot on (useful for putting
+%               this into subfigures... Default is to create a new figure. 
 % 
+% OUTPUTS are optional.  
+%  ax: axis handle to figure that was created. 
+%
 % 20120320 GMW  Creation Date.
 % 20120725 GMW  Updated for UWCMv2.1.
 % 20131101 GMW  Updated for F0AMv3, changed S inputs and added scaling option.
+% 20210623 JDH Added 'parent' option to plot to a specific subplot/ axis.
 
 %%%%%DEAL WITH INPUTS%%%%%
 if isstruct(Splot), Splot = {Splot}; end
@@ -38,11 +46,20 @@ varInfo = {...
     'unit'      'ppb'           {'ppb','ppt','percc','ppbv','pptv'};...
     'scale'     1               [];...
     'lnames'    num2str((1:L)') [];...
+    'parent'    0               [];...     
     };
 ParsePairs(varargin,varInfo);
 
 %%%%%PLOTTING%%%%%
-figure
+if parent == 0 % no axis was passed, create a new figure. 
+    figure
+    ax=gca;% parent axis is just the one we made. 
+else
+    tf= isa(parent,'matlab.graphics.axis.Axes'); % make sure user passed axis handle.
+    if tf== 0; error("PlotConcGroup: 'parent' must be an axis handle."); end  
+    ax= parent; % assign axis to plot on as the handle passed. 
+end 
+
 hold all
 symbols = 'o*^+sxp.v';
 t_all=[];
@@ -65,7 +82,7 @@ for j=1:L
             c = c./1e9.*M;
     end
     
-    plot(t,c,'Marker',symbols(j))
+    plot(t,c,'Marker',symbols(j), 'Parent', ax)
 end
 
 %%%%%PLOT DECORATIONS%%%%%
@@ -78,10 +95,11 @@ if scale~=1
     unit = [num2str(1./scale,'%1.2G') ' ' unit];
 end
 
-xlabel('Model Time')
-ylabel([Spname ' (' unit ')'])
-legend(lnames)
-xlim([min(t_all) max(t_all)])
+xlabel(ax,['Model Time']);
+ylabel(ax,[string(Spname)+" ("+ string(unit)+")"]);
+legend(ax,lnames);
+xlim(ax,[min(t_all) max(t_all)]);
+
 purtyPlot
 
 
