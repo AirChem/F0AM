@@ -13,6 +13,7 @@ function [Met_ext,InitConc_ext,BkgdConc_ext,repIndex, ModelOptions] = ...
 %               (useful if you want to plot timeseries of whole run to
 %               ensure that your "spin up" time is appropriate and that your 
 %               variables that are building up have reached steady state. 
+%               In this case, ModelOptions.TimeStamp must be a matlab datetime array, and the assumption is that the total time for 1 repetition is 1 day.
 %
 % OUTPUTS:
 % Met_ext, InitConc_ext, BkgdConc_ext: just like inputs, except with all cell array values
