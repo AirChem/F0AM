@@ -54,12 +54,10 @@ function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,var
 %               Specifies the colormap you want to use by name for
 %               plotting. 
 %            
-%           cols=rand(n,3); % Random color array. Must be n x 3 size. where
-%                             n = length(Rct2plot) +1)
 %           PlotReactivity(...,'cols',cols)
 %               Specifies an n x 3 size matrix of color values (between
 %               0-1) for plotting colors explicitly. Useful if you want to 
-%               plot with consistent colors across figures. 
+%               plot with consistent colors across figures. n = length(Rct2plot) +1.
 %
 % OUTPUTS:
 % Reactivity: matrix of reactivities.
@@ -81,7 +79,7 @@ function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,var
 %                 options to pass either a cmap name or array of colors size cols[:,3]
 %                 explicitly as the colors of plots. 
 % 20210623 JDH    Added option to plot 'hv' as a reactant 
-%                (so it would show photolysis rxns seperate from  'Other' 
+%                (so it would show photolysis rxns seperate from 'Other') 
 
 
 %%%%% DEAL WITH INPUTS %%%%%
