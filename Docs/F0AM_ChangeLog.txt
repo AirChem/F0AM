@@ -13,6 +13,9 @@ IntegrateJ.m: Changed error messages to warnings (still throws error if nan/neg)
 		Added warnings for negative LF/QY/CS and removed a line that corrected negative LF to 0.
 PlotRates.m: Fixed bug in family reaction summation, so that family cross reactions are now properly accounted for.
 		For example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2.
+InputReplictate.m: Added adjust timestamp option
+All Plotting functions: added input/output of parent figure axis handles.
+PlotReactivity.m: Added colormap input options.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
