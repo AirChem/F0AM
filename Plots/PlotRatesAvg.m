@@ -39,6 +39,11 @@ function SpRates = PlotRatesAvg(Spname,S,n2plot,varargin)
 %               SPECIAL CASE: setting this to 0 causes P/L to be normalized by total P/L.
 %               In this case, the "dilution" term is normalized to total loss.
 %               Default: 1
+% 
+%           PlotRatesAvg(...,'parent',axis)
+%              Specifies the axis handle you want to plot on (useful for putting
+%              this into subfigures... Default is to create a new figure. 
+%              Note: Does not work for the ptype 'pie' option. 
 %
 % OUTPUT (optional) is a structure containing names and rates of plotted reactions.
 %
@@ -50,6 +55,7 @@ function SpRates = PlotRatesAvg(Spname,S,n2plot,varargin)
 % 20151106 GMW    Updates for F0AMv3.
 %                 Changed options for ptype and sumEq to name-value pairs.
 %                 Added options for unit and scale.
+%20210625  JDH    Added 'parent' option to plot to a specific subplot/ axis. 
 
 %%%%%DEAL WITH INPUTS%%%%%
 %options
@@ -62,6 +68,7 @@ varInfo = {...
     'ptype'     'hbar'              {'hbar','pie'};...
     'sumEq'     0                   [0 1];...
     'pts2avg'   true(size(S.Time))  [];...
+     'parent'    0                  [];...    
     };
 ParsePairs(varargin,varInfo);
 
@@ -171,23 +178,31 @@ set(0,'DefaultTextUnits','normalized'); %have to do this for labels
 defSize = get(0,'DefaultTextFontSize');
 set(0,'DefaultTextFontSize',12);
 
+if parent == 0 % no axis was passed, create a new figure. 
+    figure
+    ax=gca;% parent axis is just the one we made. 
+else
+    tf= isa(parent,'matlab.graphics.axis.Axes'); % make sure user passed axis handle.
+    if tf== 0; error("PlotConcGroup: 'parent' must be an axis handle."); end  
+    ax= parent; % assign axis to plot on as the handle passed. 
+end 
+
 switch ptype
     case 'hbar'
-        figure;
         hold on
-        barh(P2plot','group','FaceColor',[0.9 0.9 0.9])
-        barh(L2plot','group','FaceColor',[0.9 0.9 0.9])
+        barh(P2plot','group','FaceColor',[0.9 0.9 0.9],'Parent', ax)
+        barh(L2plot','group','FaceColor',[0.9 0.9 0.9], 'Parent', ax)
         
         %set axes limits
         xmin = min(min(L2plot));
         xmax = max(max(P2plot));
         xl = max(abs([xmin xmax]))*1.1; %make axes square
-        xlim([-xl xl]);
-        ylim([0.5 n2plot + 1.5]);
+        xlim(ax,[-xl xl]);
+        ylim(ax,[0.5 n2plot + 1.5]);
         
         %decorations
-        set(gca,'YTick',[])
-        xlabel([Spname ' Rates (' unitS ')'])
+        set(ax,'YTick',[])
+        xlabel(ax,[Spname ' Rates (' unitS ')'])
         yrange = n2plot+1;
         for i=1:length(Pnames)
               text(0.98,(i-0.5)/yrange,Pnames{i},...
@@ -207,7 +222,7 @@ switch ptype
         %Add dilution
         if any(dil)
             hold on
-            d=plot([dil dil],[0.5 n2plot+1.5],'b--','LineWidth',2);
+            d=plot([dil dil],[0.5 n2plot+1.5],'b--','LineWidth',2, 'Parent', ax);
             legend(d,'dilution')
         end
         
@@ -219,18 +234,18 @@ switch ptype
         explodeP = ones(size(P2plot));
         explodeL = ones(size(L2plot));
         
-        figure
-        ax1 = subplot(121);
+        figure 
+        ax1 = subplot(1,2,1);
         Ptotal = sum(P2plot);
-        pie(P2plot./Ptotal,explodeP)
-        title(['Production' 10 'Total = ' num2str(Ptotal,'%2.2G') ' ' unitS],'HorizontalAlignment','center')
-        legend(Pnames,'Location','SouthOutside','fontsize',12)
+        pie(P2plot./Ptotal,explodeP, 'Parent', ax1)
+        title(ax1,['Production' 10 'Total = ' num2str(Ptotal,'%2.2G') ' ' unitS],'HorizontalAlignment','center')
+        legend(ax1,Pnames,'Location','SouthOutside','fontsize',12)
         
-        ax2 = subplot(122);
+        ax2 = subplot(1,2,2);
         Ltotal = sum(L2plot);
-        pie(L2plot./Ltotal,explodeL)
-        title(['Loss' 10 'Total = ' num2str(Ltotal,'%2.2G') ' ' unitS],'HorizontalAlignment','center')
-        legend(Lnames,'Location','SouthOutside','fontsize',12)
+        pie(L2plot./Ltotal,explodeL, 'Parent', ax2)
+        title(ax2,['Loss' 10 'Total = ' num2str(Ltotal,'%2.2G') ' ' unitS],'HorizontalAlignment','center')
+        legend(ax2,Lnames,'Location','SouthOutside','fontsize',12)
 end
 set(0,'DefaultTextUnits',defUnit)
 set(0,'DefaultTextFontSize',defSize)

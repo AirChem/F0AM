@@ -1,4 +1,4 @@
-function [X2plot,Xnames] = PlotConcGroup(Sp2plot,S,n2plot,varargin)
+function [X2plot,Xnames,ax] = PlotConcGroup(Sp2plot,S,n2plot,varargin)
 % function PlotConcGroup(Sp2plot,S,n2plot,varargin)
 % Generates a time series of concentrations for multiple species.
 % This is useful, for example, in plotting the speciation of RO2, MTs, etc.
@@ -38,10 +38,15 @@ function [X2plot,Xnames] = PlotConcGroup(Sp2plot,S,n2plot,varargin)
 %               Value is a scalar, 0 (no) or 1 (yes).
 %               Default: 1
 %
+%           PlotConcGroup(...,'parent',axis)
+%              Specifies the axis handle you want to plot on (useful for putting
+%               this into subfigures... Default is to create a new figure. 
+%
 % OUTPUTS are optional.
 % X2plot: matrix of species plotted.
 % Xnames: names of species plotted.
 % if desired, you can use the "breakin" command to make variables from these.
+% ax: axis handle to figure created. 
 %
 % 20120724 GMW  Creation Date.
 % 20151102 GMW  Modified for F0AMv3, including addition of name-value option inputs.
@@ -49,6 +54,7 @@ function [X2plot,Xnames] = PlotConcGroup(Sp2plot,S,n2plot,varargin)
 % 20160321 GMW  Removed option to input Sp2plot as an index, for consistency w/other function.
 %               Added ability to input sub-groups a la PlotReactivity.
 %               Added "sortem" option.
+% 20210623 JDH Added 'parent' option to plot to a specific subplot/ axis. 
 
 %%%%%INPUT CHECKING%%%%%
 if ~iscell(Sp2plot)
@@ -68,6 +74,7 @@ varInfo = {...
     'ptype'     'fill'      {'fill','bar','line'};...
     'name'      '[X]'       [];...
     'sortem'    1           [0 1];...
+    'parent'    0           [];             
     };
 ParsePairs(varargin,varInfo);
 
@@ -100,7 +107,7 @@ S.Cnames = fieldnames(S.Conc);
 %%%%%GET CONCENTRATIONS%%%%%
 Conc = ExtractSpecies(Sp2plot,S,sortem); % get concs
 [Xmat,Xnames] = breakin(Conc);
-Time = S.Time;
+Time =S.Time; 
 
 %scale it
 L = size(Xmat,2);
@@ -131,24 +138,32 @@ end
 % Xnames = flipud(Xnames);
 
 %%%%%PLOT%%%%%
-figure
+if parent == 0 % no axis was passed, create a new figure. 
+    figure
+    ax=gca;% parent axis is just the one we made. 
+else
+    tf= isa(parent,'matlab.graphics.axis.Axes'); % make sure user passed axis handle.
+    if tf== 0; error("PlotConcGroup: 'parent' must be an axis handle."); end  
+    ax= parent; % assign axis to plot on as the handle passed. 
+end 
+
 switch ptype
     case 'fill'
-        area(Time,X2plot);
+        area(Time,X2plot, 'Parent', ax);
     case 'line'
-        plot(Time,X2plot,'LineWidth',2)
+        plot(Time,X2plot,'LineWidth',2, 'Parent', ax)
     case 'bar'
-        bar(Time,X2plot,'stack');
+        bar(Time,X2plot,'stack', 'Parent', ax);
 end
 
 %Plot decorations
 load fillcolors.mat
 colormap(fillcolors);
 
-legend(Xnames,'Location','NorthEast')
-ylabel([name ' (' unitS ')'])
-xlabel('Model Time')
-xlim([min(Time) max(Time)])
+legend(ax,Xnames,'Location','NorthEast')
+ylabel([name ' (' unitS ')'], 'Parent', ax)
+xlabel('Model Time', 'Parent', ax)
+xlim(ax,[min(Time) max(Time)])
 purtyPlot
 
 %%%%%OUTPUT%%%%%

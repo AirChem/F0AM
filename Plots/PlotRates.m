@@ -1,4 +1,4 @@
-function SpRates = PlotRates(Spname,S,n2plot,varargin)
+function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 % function SpRates = PlotRates(Spname,S,n2plot,varargin)
 % Generates a plot of production and loss rates vs time.
 % The largest rates will be plotted individually (determined by n2plot), 
@@ -42,6 +42,10 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %               Specifies whether to generate plot (1) or not
 %               Default: 1
 %
+%           PlotRates(...,'parent',axis)
+%               Specifies the axis handle you want to plot on (useful for putting
+%               this into subfigures... Default is to create a new figure. 
+%
 % OUTPUT (optional) is a structure containing names and rates of plotted reactions:
 %    SpRates.Pnames:    cell array of reaction names (reactants only) for production reactions
 %    SpRates.Prod:      matrix of production reaction rates, dimensions nT x nRx
@@ -49,6 +53,7 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %    SpRates.Loss:      matrix of loss reactions rates, dimensions nT x nRx
 %    SpRates.iRx_Loss:  index for loss reactions in original S.Chem structure, sorted like Lnames
 %    SpRates.iRx_Prod:  index for production reactions in original S.Chem structure, sorted like Pnames
+%    ax:                axis handle to figure created. 
 %
 % 20120319 GMW      Created.
 % 20120725 GMW      Updated for UWCMv2.1. Now also includes dilution term.
@@ -65,9 +70,9 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %                   Added iRx outputs
 %                   Added input handling for Spname
 % 20210514 GMW      Fixed bug in dilution calculation for multiple species.
+% 20210623 JDH      Added 'parent' option to plot to a specific subplot/ axis. 
 % 20210913 GMW      Fixed bug in family reaction summation, so that family cross reactions are now
 %                   properly accounted for (for example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2
-
 
 %%%%%DEAL WITH INPUTS%%%%%
 if iscell(Spname) && length(Spname) > 1 %family
@@ -105,6 +110,7 @@ varInfo = {...
     'ptype'     'fill'      {'fill','bar','line'};...
     'sumEq'     0           [0 1];...
     'plotme'    1           [0 1];...
+    'parent'    0           [];    
      };
 ParsePairs(varargin,varInfo);
 
@@ -257,16 +263,23 @@ dil(isnan(dil)) = 0;
 
 %%%%%PLOTS%%%%%
 if plotme
+    if parent == 0 % no axis was passed, create a new figure. 
+        figure
+        ax=axes; 
+    else
+        tf= isa(parent,'matlab.graphics.axis.Axes'); % make sure user passed axis handle.
+        if tf== 0; error("PlotConcGroup: 'parent' must be an axis handle."); end  
+        ax=parent; 
+    end 
+
     Time = S.Time;
     if isempty(P2plot),P2plot = nan(size(Time)); end
     if isempty(L2plot),L2plot = nan(size(Time)); end
 
-    figure;
-    
     load('fillcolors.mat','fillcolors');
     colormap(fillcolors);
     
-    ax1 = axes;
+    ax1 = ax;
     ax2 = axes('Position',get(ax1,'Position'),'Color','none','Visible','off');
     linkaxes([ax1,ax2])
     hold on
@@ -282,15 +295,15 @@ if plotme
             plot([min(Time) max(Time)],[0 0],'k','LineWidth',2)
             ylimit = max([max(max(abs(L2plot))) max(max(P2plot)) max(abs(dil))]);
         case 'bar'
-            bar(ax1,Time,P2plot,'stack');
-            bar(ax2,Time,L2plot,'stack');
+            bar(ax1,Time,P2plot,'stack')
+            bar(ax2,Time,L2plot,'stack')
             ylimit = max([max(abs(sum(L2plot,2))) max(sum(P2plot,2)) max(abs(dil))]);
     end
     
     %Add dilution
     if any(dil)
-        hold on
-        plot(Time,dil,'k--','LineWidth',2);
+        hold on;
+        plot(Time,dil,'k--','LineWidth',2)
         Lnames = [Lnames; 'Dilution'];
     end
     
@@ -303,13 +316,12 @@ if plotme
         legend(ax2,Lnames,'Color','w','Location','SouthEast')
     end
     
-    ylabel(ax1,[Fname ' Rates (' unitS ')'])
-    xlabel(ax1,'Model Time')
+    ylabel(ax, [Fname ' Rates (' unitS ')'])
+    xlabel(ax, 'Model Time')
     
-%     tspacing = mean(diff(Time),'omitnan');
+    % tspacing = mean(diff(Time),'omitnan')
     % xlim([min(Time)-tspacing max(Time)+tspacing]) % PENG
-    ylim(1.1*[-ylimit ylimit]);
-    
+    ylim(1.1*[-ylimit ylimit])
     
     set(ax2,'Position',get(ax1,'Position')) %need this to line up P and L plots
     set(ax1,'Position',get(ax2,'Position'))
