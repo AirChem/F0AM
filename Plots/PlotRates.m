@@ -71,6 +71,8 @@ function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 %                   Added input handling for Spname
 % 20210514 GMW      Fixed bug in dilution calculation for multiple species.
 % 20210623 JDH      Added 'parent' option to plot to a specific subplot/ axis. 
+% 20210913 GMW      Fixed bug in family reaction summation, so that family cross reactions are now
+%                   properly accounted for (for example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2
 
 %%%%%DEAL WITH INPUTS%%%%%
 if iscell(Spname) && length(Spname) > 1 %family
@@ -155,9 +157,11 @@ else %family
     iRx = cell2mat(iRx);
     
     % eliminate duplicates
-    [iRx,iunq] = unique(iRx);
-    rSp = rSp(:,iunq);
-    rSpnames = rSpnames(iunq);
+    % 20210913 Commented this out so that appropriate stoichiometry is maintained for cross
+    % reactiosn among family members. For example, LROx(CH3O2 + HO2) = 2*rate(CH3O2+HO2)
+%     [iRx,iunq] = unique(iRx);
+%     rSp = rSp(:,iunq);
+%     rSpnames = rSpnames(iunq);
     
     % exclude family conversion (updated 20210503 GMW)
     [i_family,loc] = ismember(S.Cnames,Spname); %logical flag for family members

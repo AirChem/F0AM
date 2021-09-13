@@ -4,6 +4,18 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.1.2
+20210804 - 20210913
+Cross_Section_4_methyl_2_nitrophenol.csv: replaced negative values with 0. Thanks to Eleanora Puppolola.
+Cross_Section_PAN.csv: removed some rows with missing data.
+IntegrateJ.m: Changed error messages to warnings (still throws error if nan/neg)
+		Added filename text to plots
+		Added warnings for negative LF/QY/CS and removed a line that corrected negative LF to 0.
+PlotRates.m: Fixed bug in family reaction summation, so that family cross reactions are now properly accounted for.
+		For example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.1.1
 20210614: Modified FAC2F0AM.m to work with newer (and older) MCM facsimile files.
 	  Bug/typo fixes in PlotRates.m (including adjustment to dilution rate calculation)
