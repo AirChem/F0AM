@@ -16,29 +16,29 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 % n2plot: number of individual rates to plot. 
 % varargin: One can specify several options as name-value pairs:
 %
-%           PlotRatesGroup(...,'sumEq',value)
+%           PlotRates(...,'sumEq',value)
 %               Specifies a 0-1 flag for combining equilibrium reactions
 %               (e.g. HO2 + NO2 = HO2NO2 and its reverse reaaction).
 %               Default: 0
 % 
-%           PlotRatesGroup(...,'ptype',value)
+%           PlotRates(...,'ptype',value)
 %               Indicates type of plot.
 %               Values can include 'fill', 'bar' or 'line'.
 %               Default: 'fill'
 %
-%           PlotRatesGroup(...,'unit',value)
+%           PlotRates(...,'unit',value)
 %               Changes the rate unit.
 %               Valid values include any combination of cocentration (ppb, ppt, percc) and
 %               time (s, m, h), separated by _.
 %               Default: 'ppb_s'
 % 
-%           PlotRatesGroup(...,'scale',value)
+%           PlotRates(...,'scale',value)
 %               Specifies an additonal scalar multiplier.
 %               SPECIAL CASE: setting this to 0 causes P/L to be normalized by total P/L.
 %               In this case, the "dilution" term is normalized to total loss.
 %               Default: 1
 %
-%           PlotRatesGroup(...,'plotme',value)
+%           PlotRates(...,'plotme',value)
 %               Specifies whether to generate plot (1) or not
 %               Default: 1
 %
@@ -65,6 +65,8 @@ function SpRates = PlotRates(Spname,S,n2plot,varargin)
 %                   Added iRx outputs
 %                   Added input handling for Spname
 % 20210514 GMW      Fixed bug in dilution calculation for multiple species.
+% 20210913 GMW      Fixed bug in family reaction summation, so that family cross reactions are now
+%                   properly accounted for (for example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2
 
 
 %%%%%DEAL WITH INPUTS%%%%%
@@ -149,9 +151,11 @@ else %family
     iRx = cell2mat(iRx);
     
     % eliminate duplicates
-    [iRx,iunq] = unique(iRx);
-    rSp = rSp(:,iunq);
-    rSpnames = rSpnames(iunq);
+    % 20210913 Commented this out so that appropriate stoichiometry is maintained for cross
+    % reactiosn among family members. For example, LROx(CH3O2 + HO2) = 2*rate(CH3O2+HO2)
+%     [iRx,iunq] = unique(iRx);
+%     rSp = rSp(:,iunq);
+%     rSpnames = rSpnames(iunq);
     
     % exclude family conversion (updated 20210503 GMW)
     [i_family,loc] = ismember(S.Cnames,Spname); %logical flag for family members

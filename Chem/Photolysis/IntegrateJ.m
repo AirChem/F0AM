@@ -44,6 +44,10 @@ function [J,wl_out,QY_out,CS_out,LF_out] = IntegrateJ(CSin,QYin,LFin,T,P,wl_boun
 % 20160302 GMW      Modified for vectorized CS/QY functions.
 % 20160425 GMW      Added plotting option.
 % 20190222 GMW      Added *_out outputs.
+% 20210722 GMW      Changed error messages to warnings (still throws error if nan/neg)
+%                   Added filename text to plots
+%                   Added warnings for negative LF/QY/CS and removed a line that corrected negative
+%                   LF to 0.
 
 %% DEAL WITH INPUTS
 nT = length(T);
@@ -55,44 +59,99 @@ if nargin<6 || isempty(wl_bounds), wl_bounds = [0 100000]; end
 
 if nargin<7, plotem=0; end
 
+% define component names
+if isnumeric(CSin), CSname = 'CS is array input';
+else, CSname = char(CSin);
+end
+
+if isnumeric(QYin) && ~isscalar(QYin), QYname = 'QY is array input';
+else, QYname = char(QYin);
+end
+
+if isnumeric(LFin), LFname = 'LF is array input';
+else, LFname = char(LFin);
+end
+
 %% LIGHT FLUX
 if ischar(LFin)            %text file
-    lf = dlmread(LFin);
+    if verLessThan('matlab','9.6') %R2019a is when readmatrix came out
+        lf = dlmread(LFin);
+        zerojunk = lf(:,1) == 0; %sometimes get bad values from csv files
+        lf(zerojunk,:) = [];
+    else
+        lf = readmatrix(LFin);
+    end
+    
     wl_lf = lf(:,1);
     LF    = lf(:,2);
+    
 elseif isnumeric(LFin)     %2-column array
     wl_lf = LFin(:,1);
     LF    = LFin(:,2);
+    
 else                        %function
     [LF,wl_lf] = feval(LFin);
+    
 end
-LF(LF<0) = 0;
+
+if any(LF<0)
+    warning(['IntegrateJ: negative values in actinic flux. Data source: ' LFname])
+end
 
 %% CROSS SECTION
 if ischar(CSin)            %text file
-    cs = dlmread(CSin);
+    if verLessThan('matlab','9.6') %R2019a is when readmatrix came out
+        cs = dlmread(CSin);
+        zerojunk = cs(:,1) == 0; %sometimes get bad values from csv files
+        cs(zerojunk,:) = [];
+    else
+        cs = readmatrix(CSin);
+    end
+    
     wl_cs = cs(:,1);
     CS =    cs(:,2);
+    
 elseif isnumeric(CSin)     %2-column array
     wl_cs = CSin(:,1);
     CS    = CSin(:,2);
+    
 else                        %function
     [CS,wl_cs] = feval(CSin,T,P);
+    
+end
+
+if any(CS<0)
+    warning(['IntegrateJ: negative values in cross section. Data source: ' CSname])
 end
 
 %% QUANTUM YIELD
 if ischar(QYin)           %text file
-    qy = dlmread(QYin);
+    if verLessThan('matlab','9.6') %R2019a is when readmatrix came out
+        qy = dlmread(QYin);
+        zerojunk = qy(:,1) == 0; %sometimes get bad values from csv files
+        qy(zerojunk,:) = [];
+    else
+        qy = readmatrix(QYin);
+    end
+    
     wl_qy = qy(:,1);
     QY    = qy(:,2);
+    
 elseif isnumeric(QYin) && isscalar(QYin)     %scalar
     wl_qy = wl_lf;
     QY    = QYin*ones(size(wl_qy));
+    
 elseif isnumeric(QYin)    %2-column array
     wl_qy = QYin(:,1);
     QY    = QYin(:,2);
+    
 else                        %function
     [QY,wl_qy] = feval(QYin,T,P);
+    
+end
+
+if any(QY<0)
+    warning(['IntegrateJ: negative values in quantum yield. Data source: ' QYname])
 end
 
 %% TRUNCATE AND INTERPOLATE
@@ -161,12 +220,18 @@ end
 %% EVALUATE J
 J = trapz(wl_out,QY_out.*CS_out.*LF_out)';
 
+%% PROBLEM CHECKS
+nanneg = 0; %flag for terminating run
 if any(J < 0)
-    error(['Negative J Value Calculated. '...
-        'Check photolysis files. QYield:' char(QYin) ' Cross: ' char(CSin)])
+    warning(['Negative J Value Calculated. '...
+        'Check photolysis files. QYield:' QYname '; Cross: ' CSname '; LFlux: ' LFname])
+		plotem = 1;
+        nanneg = 1;
 elseif any(isnan(J))
-    error(['NaN J Value Calculated. '...
-        'Check photolysis files. QYield:' char(QYin) ' Cross: ' char(CSin)])
+    warning(['NaN J Value Calculated. '...
+        'Check photolysis files. QYield:' QYname '; Cross: ' CSname '; LFlux: ' LFname])
+		plotem = 1;
+        nanneg = 1;
 end
 
 %% OPTIONAL PLOTS
@@ -176,18 +241,26 @@ if plotem
     plot(wl_cs,CS,'b+-',wl_out,CS_out,'ro')
     ylabel('Cross Section (cm^2)')
     legend('Input','Convolved')
+	text(0.05,0.95,CSname,'fontsize',12,'units','normalized')
     s3=subplot(222);
     plot(wl_qy,QY,'b+-',wl_out,QY_out,'ro')
     ylabel('Quantum Yield')
+	text(0.05,0.95,QYname,'fontsize',12,'units','normalized')
     s1=subplot(223);
     plot(wl_out,LF_out,'k*-')
     ylabel('Light Flux (#/s/cm^2/nm)')
     xlabel('wavelength (nm)')
+    text(0.05,0.95,LFname,'fontsize',12,'units','normalized')
     s4=subplot(224);
     plot(wl_out,QY_out.*CS_out.*LF_out.*dwl,'k*-')
     ylabel('LF*QY*CS*dw (/s)')
     xlabel('wavelength (nm)')
     linkaxes([s1 s2 s3 s4],'x')
+end
+
+%% terminate if nan or neg
+if nanneg
+    error('IntegrateJ:InvalidOutput','Calculated J is NaN or negative. Presumably, that is a problem.')
 end
 
 %% SUB-FUNCTION FOR INTEGRAL CONVOLUTION
