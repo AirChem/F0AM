@@ -4,6 +4,18 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.2.1
+20210922
+ - IntegrateJ.m: tweak to plotting
+ - Quantum_Yield_N2O5_NO3_NO_O.csv: deleted empty rows
+ - ExampleLightFlux.txt: changed negative fluxes to 0.
+ - PlotRates.m: fixed a bug that caused iRx_Prod output to be upside down.
+ - PlotReactivity.m: fixed colors for line plots
+ - SearchSMILES.m: Changed pattern for alkoxy radicals, added aryloxy radicals
+ - sumRates_ROx.m and sumRates_NOx.m: new tools to aggregate production and loss of radical groups. These are still experimental, so use with caution and verification.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.2
 20210804 - 20210913
 Cross_Section_4_methyl_2_nitrophenol.csv: replaced negative values with 0. Thanks to Eleanora Puppolola.

@@ -73,6 +73,7 @@ function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 % 20210623 JDH      Added 'parent' option to plot to a specific subplot/ axis. 
 % 20210913 GMW      Fixed bug in family reaction summation, so that family cross reactions are now
 %                   properly accounted for (for example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2
+% 20210915 GMW      Fixed bug that was causing iRx_Prod to be flipped upside down.
 
 %%%%%DEAL WITH INPUTS%%%%%
 if iscell(Spname) && length(Spname) > 1 %family
@@ -223,7 +224,7 @@ iP = rSpsum>0;
 Pall = fliplr(rSp(:,iP));
 Pnames = flipud(rct(iP));
 Psum = sum(Pall,2);
-iRx_Prod = iRx(iP);
+iRx_Prod = flipud(iRx(iP));
 
 if scale(1)==0,         Pall = Pall./repmat(Psum,1,sum(iP));
 elseif length(scale)>1, Pall = Pall.*repmat(scale,1,sum(iP));

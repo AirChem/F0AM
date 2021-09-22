@@ -48,6 +48,7 @@ function [J,wl_out,QY_out,CS_out,LF_out] = IntegrateJ(CSin,QYin,LFin,T,P,wl_boun
 %                   Added filename text to plots
 %                   Added warnings for negative LF/QY/CS and removed a line that corrected negative
 %                   LF to 0.
+% 20210922 GMW      Tweaked plots to only show first QS/QY in case of multiple outputs
 
 %% DEAL WITH INPUTS
 nT = length(T);
@@ -224,12 +225,12 @@ J = trapz(wl_out,QY_out.*CS_out.*LF_out)';
 nanneg = 0; %flag for terminating run
 if any(J < 0)
     warning(['Negative J Value Calculated. '...
-        'Check photolysis files. QYield:' QYname '; Cross: ' CSname '; LFlux: ' LFname])
+        'Check photolysis files. QYield: ' QYname '; Cross: ' CSname '; LFlux: ' LFname])
 		plotem = 1;
         nanneg = 1;
 elseif any(isnan(J))
     warning(['NaN J Value Calculated. '...
-        'Check photolysis files. QYield:' QYname '; Cross: ' CSname '; LFlux: ' LFname])
+        'Check photolysis files. QYield: ' QYname '; Cross: ' CSname '; LFlux: ' LFname])
 		plotem = 1;
         nanneg = 1;
 end
@@ -238,21 +239,21 @@ end
 if plotem
     figure
     s2=subplot(221);
-    plot(wl_cs,CS,'b+-',wl_out,CS_out,'ro')
+    p1 = plot(wl_cs,CS(:,1),'b+-',wl_out,CS_out(:,1),'ro');
     ylabel('Cross Section (cm^2)')
     legend('Input','Convolved')
 	text(0.05,0.95,CSname,'fontsize',12,'units','normalized')
     s3=subplot(222);
-    plot(wl_qy,QY,'b+-',wl_out,QY_out,'ro')
+    plot(wl_qy,QY(:,1),'b+-',wl_out,QY_out(:,1),'ro')
     ylabel('Quantum Yield')
 	text(0.05,0.95,QYname,'fontsize',12,'units','normalized')
     s1=subplot(223);
-    plot(wl_out,LF_out,'k*-')
+    plot(wl_out,LF_out,'*-')
     ylabel('Light Flux (#/s/cm^2/nm)')
     xlabel('wavelength (nm)')
     text(0.05,0.95,LFname,'fontsize',12,'units','normalized')
     s4=subplot(224);
-    plot(wl_out,QY_out.*CS_out.*LF_out.*dwl,'k*-')
+    plot(wl_out,QY_out.*CS_out.*LF_out.*dwl,'*-')
     ylabel('LF*QY*CS*dw (/s)')
     xlabel('wavelength (nm)')
     linkaxes([s1 s2 s3 s4],'x')
