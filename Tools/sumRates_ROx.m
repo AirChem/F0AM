@@ -13,8 +13,13 @@ function rates = sumRates_ROx(S)
 %   "PNs" is all peroxy nitrate formation (including CH3O2NO2 and PANs) and is the net rate
 %   (so,adjusted for equilibrium).
 %   "ArNO2" is aromatic nitrate formation (e.g., CATEC1O + NO2 -> NCATECHOL)
-%   "HO2 + NO2" is peroxynitrate formation and is the net rate. This will be 0 if net production.
-%   "OH + X" is a small set of reactions where X is typically a PAN (e.g. PPN + OH = CH3CHO + CO + NO2)
+%   "HO2 + NO2" is peroxynitrate formation and is the net rate. This will be 0 if the net rate
+%       favors HO2NO2 decomposition.
+%   "OH + NO" is net HONO formation (in equilibrium with HONO + hv). This will be 0 if the net rate
+%       favors HONO photolysis.
+%   "OH + X" is a small set of reactions where X is typically a PAN (e.g. PPN + OH = CH3CHO + CO + NO2). 
+%       Also includes net loss from HONO formation via OH + NO (usually small as it is in
+%       equilibrium with HONO + hv).
 % 
 % PRODUCTION REACTION DEFINITIONS
 % Pnames = {'O1D + H2O';'H2O2 + hv';'HCHO + hv';'oVOC + hv';'HONO + hv';'O3 + ene';'PANs';'HO2NO2';'NO3 + X';'other'};
@@ -36,6 +41,7 @@ function rates = sumRates_ROx(S)
 % rates.iRx_Loss
 %
 % 20210920 GMW
+% 20210924 GMW Separated OH + NO from OH + X in Loss groups
 
 % Get net P/L rates
 RO2names = S.Cnames(S.Chem.iRO2);
@@ -67,7 +73,7 @@ jrO = any(ismember(iG,rOinfo.index),2);
 jBB = any(ismember(iG,iBB),2);
 
 % index full reactions
-Lnames = {'OH + HO2';'HO2 + HO2';'HO2 + RO2';'RO2 + RO2';'RO2 + NO';'PNs';'ArNO2';'OH + NO2';'HO2 + NO2';'OH + X';'other'};
+Lnames = {'OH + HO2';'HO2 + HO2';'HO2 + RO2';'RO2 + RO2';'RO2 + NO';'PNs';'ArNO2';'OH + NO2';'HO2 + NO2';'OH + NO';'OH + X';'other'};
 jOHHO2  = strcmp(Lnames{1},Frates.Lnames);
 jHO2HO2 = strcmp(Lnames{2},Frates.Lnames);
 jHO2RO2 = jHO2 & jRO2speciated;
@@ -77,16 +83,17 @@ jRO2NO2 = jRO2speciated & jNO2;
 jArNO2 = (jNO2 & jrO) | (jNO2 & jBB);
 jOHNO2  = jOH & jNO2;
 jHO2NO2 = jNO2 & jHO2;
-jOHX    = jOH & ~jOHHO2 & ~jOHNO2;
+jOHNO   = jOH & jNO;
+jOHX    = jOH & ~jOHHO2 & ~jOHNO2 & ~jOHNO;
 
-jother  = ~(jOHHO2 | jHO2HO2 | jHO2RO2 | jRO2RO2 | jRO2NO | jRO2NO2 | jOHNO2 | jOHX | jArNO2 | jHO2NO2);
+jother  = ~(jOHHO2 | jHO2HO2 | jHO2RO2 | jRO2RO2 | jRO2NO | jRO2NO2 | jOHNO2 | jOHX | jArNO2 | jHO2NO2 | jOHNO);
 
 % order indices
-jall = {jOHHO2;jHO2HO2;jHO2RO2;jRO2RO2;jRO2NO;jRO2NO2;jArNO2;jOHNO2;jHO2NO2;jOHX;jother};
+jall = {jOHHO2;jHO2HO2;jHO2RO2;jRO2RO2;jRO2NO;jRO2NO2;jArNO2;jOHNO2;jHO2NO2;jOHNO;jOHX;jother};
 
 % loop through, sum and store reaction index
 rates.Lnames = Lnames;
-rates.Loss = zeroes(length(S.Time),length(Lnames));
+rates.Loss = zeros(length(S.Time),length(Lnames));
 rates.iRx_Loss = cell(length(Lnames),1);
 for i = 1:length(Lnames)
     if ~isempty(jall{i})
@@ -95,33 +102,6 @@ for i = 1:length(Lnames)
     rates.iRx_Loss{i} = Frates.iRx_Loss(jall{i});
 end
 
-    
-% Loss(:,1) = Frates.Loss(:,jrx1);
-% Loss(:,2) = Frates.Loss(:,jrx2);
-% Loss(:,3) = sum(Frates.Loss(:,jHO2RO2),2);
-% Loss(:,4) = sum(Frates.Loss(:,jRO2RO2),2);
-% Loss(:,5) = sum(Frates.Loss(:,jRO2NO),2);
-% Loss(:,6) = sum(Frates.Loss(:,jRO2NO2),2);
-% Loss(:,7) = sum(Frates.Loss(:,jArNO2),2);
-% Loss(:,8) = Frates.Loss(:,jOHNO2);
-% Loss(:,9) = Frates.Loss(:,jHO2NO2);
-% Loss(:,10) = sum(Frates.Loss(:,jOHX),2);
-% Loss(:,11) = sum(Frates.Loss(:,jother),2);
-% 
-% % stuff into structure
-% rates.Loss = Loss;
-% rates.Lnames = Lnames;
-% rates.iRx_Loss = {Frates.iRx_Loss(jrx1),...
-%     Frates.iRx_Loss(jrx2),...
-%     Frates.iRx_Loss(jHO2RO2),...
-%     Frates.iRx_Loss(jRO2RO2),...
-%     Frates.iRx_Loss(jRO2NO),...
-%     Frates.iRx_Loss(jRO2NO2),...
-%     Frates.iRx_Loss(jArNO2),...
-%     Frates.iRx_Loss(jOHNO2),...
-%     Frates.iRx_Loss(jHO2NO2),...
-%     Frates.iRx_Loss(jOHX),...
-%     Frates.iRx_Loss(jother)}';
 
 %% Production
 
