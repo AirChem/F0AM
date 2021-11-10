@@ -22,6 +22,9 @@ function Q = SearchSMILES(pattern,Cnames,MCMversion)
 %
 % 20130104 GMW
 % 20210303 GMW  Added alkoxyRadical option
+% 20210914 GMW  Added peroxyacylRadical option (same as APRadical)
+%               Added aryloxyRadical group
+% 20210915 GMW  Updated alkoxyRadical pattern to catch non-primary radicals ((C)[O] and similar).
 %
 %%%%%DIRECTIONS FOR CREATING MCMSpeciesInfo.mat%%%%%
 % 1) Go to MCM website and select ALL VOCs
@@ -65,8 +68,15 @@ switch pattern
     case 'peroxyRadical'
         p = 'O\[O\]|\[O\]O';
     case 'alkoxyRadical'
-        p = 'C\[O\]|\[O\]C';
-    case 'APRadical'
+%         p = ['C\)?\(?\[O\][^O]?|'...
+%             '[^O]?\[O\]\(?\)?C|'];
+        p = '(?<!O)(\[O\])(?!O)';
+    case 'aryloxyRadical'
+        p = ['c\d?\[O\]|'...
+            '\[O\]\d?c|'...
+            'c\d?\(\[O\]\)|'...
+            '\(\[O\]\)\d?c'];
+    case {'APRadical','peroxyacylRadical'}
         p = ['C\(=O\)O\[O\]|'...
             '\[O\]OC\(=O\)'];
     case 'criegee'

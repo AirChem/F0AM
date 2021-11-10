@@ -4,7 +4,19 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-v4.1.2
+v4.2.1
+20210922
+ - IntegrateJ.m: tweak to plotting
+ - Quantum_Yield_N2O5_NO3_NO_O.csv: deleted empty rows
+ - ExampleLightFlux.txt: changed negative fluxes to 0.
+ - PlotRates.m: fixed a bug that caused iRx_Prod output to be upside down.
+ - PlotReactivity.m: fixed colors for line plots
+ - SearchSMILES.m: Changed pattern for alkoxy radicals, added aryloxy radicals
+ - sumRates_ROx.m and sumRates_NOx.m: new tools to aggregate production and loss of radical groups. These are still experimental, so use with caution and verification.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+v4.2
 20210804 - 20210913
 Cross_Section_4_methyl_2_nitrophenol.csv: replaced negative values with 0. Thanks to Eleanora Puppolola.
 Cross_Section_PAN.csv: removed some rows with missing data.
@@ -13,6 +25,9 @@ IntegrateJ.m: Changed error messages to warnings (still throws error if nan/neg)
 		Added warnings for negative LF/QY/CS and removed a line that corrected negative LF to 0.
 PlotRates.m: Fixed bug in family reaction summation, so that family cross reactions are now properly accounted for.
 		For example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2.
+InputReplictate.m: Added adjust timestamp option
+All Plotting functions: added input/output of parent figure axis handles.
+PlotReactivity.m: Added colormap input options.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -222,12 +237,12 @@ Chemistry Changes:
     (-2 where it should be 2). Fixed it.
  - RACM-2 reaction file streamlined by combining all like reactions (Thanks to SJR).
  - CB6r2 mechanism updated to reflect most recent CAMx implementation. Notes from MRM:
-    "I used CAMx v6.1 when I originally wrote CB6r2, but now there’s a CAMx v6.3. Most of the 
+    "I used CAMx v6.1 when I originally wrote CB6r2, but now thereÂ’s a CAMx v6.3. Most of the 
     changes relate to NTR chemistry. In the Yarwood documentation for CB6r2, NTR is split into 
-    NTR1 and NTR2, but this wasn’t incorporated into the CAMx mechanism until after the release 
+    NTR1 and NTR2, but this wasnÂ’t incorporated into the CAMx mechanism until after the release 
     of v6.1, which just uses NTR. Otherwise, the ISPD+OH reaction (R158) was modified to form 
     new products with new product fractions. And HPALD photolysis was changed to remove HO2 as a 
-    product. These two changes are NOT consistent with the Yarwood docs, but I’ve included them 
+    product. These two changes are NOT consistent with the Yarwood docs, but IÂ’ve included them 
     to stay consistent with CAMx."
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

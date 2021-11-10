@@ -352,7 +352,7 @@ PlotReactivity(nCH3O2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
 PlotReactivity(nISOPO2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
 
 % And, how about checking out HOx production and loss (excluding reactions that interconvert HOx)
-PlotRatesGroup({'HOx','OH','HO2'},S,10,'sumEq',1,'ptype','line')
+PlotRates({'HOx','OH','HO2'},S,10,'sumEq',1,'ptype','line')
 
 end %end makeplots if
 

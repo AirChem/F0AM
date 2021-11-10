@@ -23,8 +23,9 @@ function [Met_ext,InitConc_ext,BkgdConc_ext,repIndex, ModelOptions] = ...
 % ModelOptions: same as input except ModelOptions.Timestamp is adjusted nRep days
 %               if this arg was passed 
 %
-% 20210623 JDH - added adjust timestamp option. 
-% 20200414 GMW
+% 20200414 GMW  Created
+% 20210623 JDH  Added adjust timestamp option. 
+
 
 % Count input vars to decide if ModelOptions.Timestamp was passed. 
 if nargin==5 

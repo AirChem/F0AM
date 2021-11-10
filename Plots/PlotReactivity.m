@@ -79,8 +79,8 @@ function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,var
 %                 options to pass either a cmap name or array of colors size cols[:,3]
 %                 explicitly as the colors of plots. 
 % 20210623 JDH    Added option to plot 'hv' as a reactant 
-%                (so it would show photolysis rxns seperate from 'Other') 
-
+%                 (so it would show photolysis rxns seperate from 'Other') 
+% 20210922 GMW    Modified handling of colors to work with bar and line plot styles.
 
 %%%%% DEAL WITH INPUTS %%%%%
 
@@ -106,8 +106,8 @@ varInfo = {...
     'sumEq'     0           [0 1];...
     'plotme'    1           [0 1];...
     'parent'    0           [];...   
-    'cols'      [],          [] 
-    'cmapname'  '',         []; 
+    'cols'      [],         [];... 
+    'cmapname'  '',         [];... 
     };
 ParsePairs(varargin,varInfo);
 
@@ -115,7 +115,9 @@ ParsePairs(varargin,varInfo);
 if ~isstring(cmapname) && ~ischar(cmapname) && isempty(cmapname)
     error('PlotReactivity: cmapname must be a string or char.');
 end
-if ~isempty(cols)  % Make sure color arr is correct length 
+
+% Make sure color arr is correct length 
+if ~isempty(cols)  
     if width(cols)~=3 ; error('PlotReactivity: cols must be a 3 column array.'); end 
     if max(max(cols))>1;error('PlotReactivity: cols must not contain values >1.'); end
     if min(min(cols))<0;error('PlotReactivity: cols must not contain values <0.'); end
@@ -242,12 +244,13 @@ if plotme
     
     % Define # of discrete colors in the user provided cmapname based on R2Plot. 
     if isempty(cols) && ~isempty(cmapname)
-        cmap=colormap(cmapname); % Load cmap
-        n=length(R2plot(1,:)); n2=length(cmap); %// number discrete cols needed & # have. 
-        cols=cmap(1:floor(n2/n):n2, :); % Select n discrete colors you need. 
+        cmap = colormap(cmapname); % Load cmap
+        n = length(R2plot(1,:));
+        n2 = length(cmap); %// number discrete cols needed & # have. 
+        cols = cmap(1:floor(n2/n):n2, :); % Select n discrete colors you need.
     end 
     
-    if length(cols) < length(R2plot(1,:)) 
+    if ~isempty(cols) && (length(cols) < length(R2plot(1,:)))
         % If weren't passed enough cols, then add the # you need to avoid plotting errors.  
         needed=length(R2plot(1,:))- length(cols); 
         cols=[cols; rand(needed, 3)];
@@ -268,9 +271,14 @@ if plotme
             h= bar(Time,R2plot,'stack', 'Parent', ax);
     end
 
-    if width(cols)==3 % Apply the colors you wanted to items in handle.
+    if ~isempty(cols) % Apply the colors you wanted to items in handle.
         for i =1:length(h)
-            set(h(i),'FaceColor',cols(i,:))
+            switch ptype
+                case {'fill','bar'}
+                    set(h(i),'FaceColor',cols(i,:))
+                case 'line'
+                    set(h(i),'Color',cols(i,:))
+            end
         end
     end 
     
