@@ -4,6 +4,8 @@ Framework for 0-D Atmospheric Modeling
 
 Most recent public release: [**v4.2.1**](https://github.com/AirChem/F0AM/releases/latest)
 
+[![DOI](https://zenodo.org/badge/163446406.svg)](https://zenodo.org/badge/latestdoi/163446406)
+
 Contact: glenn.m.wolfe
 
 Other part of contact: nasa.gov (sorry, spammers are smart)
