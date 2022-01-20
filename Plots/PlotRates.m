@@ -210,10 +210,10 @@ Lall(isnan(Lall)) = 0; %potential for NaN if normalizing
 if sum(iL) <= n2plot
     L2plot = Lall;
 else
-    [MaxRate,iMax] = max(max(Lall(:,n2plot+1:end))); %identify largest contribution in "other"
+    [MaxRate,iMax] = min(min(Lall(:,n2plot+1:end))); %identify largest contribution in "other"
     disp(['PlotRates: ' Fname])
     disp(['  Number of Loss Reactions in "other" = ' num2str(sum(iL)-n2plot)])
-    disp(['  Largest contribution in "other" is ' Lnames{iMax} ' at ' num2str(MaxRate) ' ' unitS])
+    disp(['  Largest contribution in "other" is ' Lnames{iMax + n2plot} ' at ' num2str(MaxRate) ' ' unitS])
     
     Lother = sum(Lall(:,n2plot+1:end),2);
     L2plot = [Lall(:,1:n2plot) Lother];
@@ -238,7 +238,7 @@ else
     [MaxRate,iMax] = max(max(Pall(:,n2plot+1:end))); %identify largest contribution in "other"
     disp(['PlotRates: ' Fname])
     disp(['  Number of Production Reactions in "other" = ' num2str(sum(iP)-n2plot)])
-    disp(['  Largest contribution in "other" is ' Pnames{iMax} ' at ' num2str(MaxRate) ' ' unitS])
+    disp(['  Largest contribution in "other" is ' Pnames{iMax + n2plot} ' at ' num2str(MaxRate) ' ' unitS])
     
     Pother = sum(Pall(:,n2plot+1:end),2);
     P2plot = [Pall(:,1:n2plot) Pother];

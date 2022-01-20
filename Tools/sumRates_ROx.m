@@ -73,7 +73,7 @@ jrO = any(ismember(iG,rOinfo.index),2);
 jBB = any(ismember(iG,iBB),2);
 
 % index full reactions
-Lnames = {'OH + HO2';'HO2 + HO2';'HO2 + RO2';'RO2 + RO2';'RO2 + NO';'PNs';'ArNO2';'OH + NO2';'HO2 + NO2';'OH + NO';'OH + X';'other'};
+Lnames = {'OH + HO2';'HO2 + HO2';'HO2 + RO2';'RO2 + RO2';'RO2 + NO';'PNs';'AromNO2';'OH + NO2';'HO2 + NO2';'OH + NO';'OH + X';'other'};
 jOHHO2  = strcmp(Lnames{1},Frates.Lnames);
 jHO2HO2 = strcmp(Lnames{2},Frates.Lnames);
 jHO2RO2 = jHO2 & jRO2speciated;
