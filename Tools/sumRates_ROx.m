@@ -42,6 +42,8 @@ function rates = sumRates_ROx(S)
 %
 % 20210920 GMW
 % 20210924 GMW Separated OH + NO from OH + X in Loss groups
+% 20220601 GMW In "Production", modified jHONO definition to exclude HONO + OH and added special
+%               treatment in case there is no net production (HONO is equilibrium reaction).
 
 % Get net P/L rates
 RO2names = S.Cnames(S.Chem.iRO2);
@@ -125,7 +127,7 @@ jH2O2 = any(iG == iH2O2,2);
 jHCHO = any(iG == iHCHO,2) & ~any(iG == iNO3,2); %exclude HCHO + NO3
 % jGLY = any(iG == iGLY,2) & ~any(iG == iNO3,2); %exclude HCHO + NO3
 % jMGLY = any(iG == iMGLY,2) & ~any(iG == iNO3,2); %exclude HCHO + NO3
-jHONO = any(iG == iHONO,2);
+jHONO = any(iG == iHONO,2) & ~any(iG == iOH,2); % exclude HONO + OH
 jO3 = any(iG == iO3,2) | any(ismember(iG,CRinfo.index),2); % assume all criegees stem from O3
 jNO3 = any(iG == iNO3,2);
 joVOC = contains(Frates.Pnames,'hv') & ~(jO1D | jH2O2 | jHCHO | jHONO);
@@ -140,7 +142,10 @@ Prod(:,1) = Frates.Prod(:,jO1D);
 Prod(:,2) = Frates.Prod(:,jH2O2);
 Prod(:,3) = Frates.Prod(:,jHCHO);
 Prod(:,4) = sum(Frates.Prod(:,joVOC),2);
-Prod(:,5) = Frates.Prod(:,jHONO);
+
+if sum(jHONO), Prod(:,5) = Frates.Prod(:,jHONO); %special case for HONO b/c it is equilibrium
+else, Frates.Prod(:,5) = 0*Frates.Prod(:,1); end
+
 Prod(:,6) = sum(Frates.Prod(:,jO3),2);
 Prod(:,7) = sum(Frates.Prod(:,jPANs),2);
 Prod(:,8) = sum(Frates.Prod(:,jHO2NO2),2);

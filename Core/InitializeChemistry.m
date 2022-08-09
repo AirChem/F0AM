@@ -4,7 +4,7 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(M
 % used in the dydt_eval function.
 %
 % INPUTS:
-% Met: a structure containing any numer of meteorological variables.
+% Met: a structure containing any number of meteorological variables.
 %       See InitializeMet.m for a list of valid variables (which users can modify as needed).
 %       Also might contain the following optional fields: 
 %       jcorr_all:  array of correction factors for all J-values. Generated as an output
@@ -48,6 +48,7 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(M
 %               This prevents issues when feeding in nighttime j-value data.
 % 20160304 GMW  Modified to accept J, K function outputs as structures.
 % 20190123 GMW  Added iLR output
+% 20220620 GMW  Added more reactions to the list of exclusions for repetition warnings.
 
 %% INITIALIZE VARIABLES
 struct2var(Met)
@@ -225,6 +226,19 @@ if nargin<4 || firstCall
             'TM124MUO3H + hv = EPXM2DCO3H + CH3CO3 + HO2 + CO'
             'TM135MUO2H + hv = C7M2CO5O2 + HO2'
             'TM135MUO3H + hv = C7M2CO5O2 + OH'
+            'ALCOCH2OOH + hv = CHOCOCH2O + OH'
+            'BIACETOOH + hv = BIACETO + OH'
+            'BUTALNO3 + hv = NO2 + BUTALO'
+            'BZEMUCCO + hv = HCOCOHCO3 + C3DIALO2'
+            'BZEMUCOOH + hv = BZEMUCO + OH'
+            'C101OOH + hv = C101O + OH'
+            'C102OOH + hv = C102O + OH'
+            'C103OOH + hv = C103O + OH'
+            'C105OOH + hv = C105O + OH'
+            'C106NO3 + hv = C106O + NO2'
+            'C106OOH + hv = C106O + OH'
+            'C107OOH + hv = C107O + OH'
+            'C108NO3 + hv = C108O + NO2'
             };
     repRx = setdiff(repRx,Rnames_exc); %removed excepted names from list
     

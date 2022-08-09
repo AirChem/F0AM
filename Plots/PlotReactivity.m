@@ -3,6 +3,7 @@ function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,var
 % Generates a plot of speciated reactivity (inverse lifetime) versus time.
 % Typically used to look at oxidant reactivity (e.g. OH or O3.. can also pass 
 % 'hv' as a reactant to see loss relative to photolysis).
+% This will NOT properly calculate reactivity for 3rd-order reactions.
 %
 % INPUTS:
 % Spname: name of species of interest.
@@ -81,6 +82,10 @@ function [Reactivity,ReactivityNames, ax] = PlotReactivity(Spname,S,Rct2plot,var
 % 20210623 JDH    Added option to plot 'hv' as a reactant 
 %                 (so it would show photolysis rxns seperate from 'Other') 
 % 20210922 GMW    Modified handling of colors to work with bar and line plot styles.
+% 20220603 GMW    Fixed bug in assignment of "Rctnames" related to third column in Chem.iG matrix
+%                 (for occasional 3rd-order reactions). This was causing incorrect calculations
+%                 for the "sum" and "all" options. Thanks to Abby Sebol.
+%                 Also added sorting when using "all" option.
 
 %%%%% DEAL WITH INPUTS %%%%%
 
@@ -177,7 +182,7 @@ nL = sum(iL);
 Reactivity = -rSp(:,iL)./repmat(CSp,1,nL);
 rSpnames = rSpnames(iL);
 iRx = iRx(iL);
-Rctnames = Cnames(iG(iRx,:)); %2-column cell array of reactant names for each reaction
+Rctnames = Cnames(iG(iRx,1:2)); %2-column cell array of reactant names for each reaction
 
 % Take care of photolysis reactions (look for 'hv' in reaction)... 
 j_rxns= find(contains(rSpnames,'hv')); 
@@ -209,10 +214,19 @@ end
 
 %%%%% DEAL WITH OTHER REACTANTS OR NON-REACTIVE SPECIES %%%%%
 if allflag
+    
+    % filter non-contributing reactions
     sumR = sum(R2plot,1);
     junk = sumR == 0;
     R2plot(:,junk) = [];
     lnames(junk) = [];
+    
+    % sort
+    sumR = sum(R2plot,1);
+    [~,isorted] = sort(sumR,'descend');
+    R2plot = R2plot(:,isorted);
+    lnames = lnames(isorted);
+    
 elseif sumflag
     R2plot = sum(R2plot,2);
     lnames = 'Total';

@@ -11,6 +11,9 @@ function tau = lifetime(Spname,S,sumEq)
 % OUTPUT:
 % tau:  chemical lifetime, seconds.
 %
+% EXAMPLE USE
+% tau = lifetime('NO3',S,1);
+%
 % 20160324 GMW
 
 if nargin<3

@@ -3,6 +3,16 @@ function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 % Generates a plot of production and loss rates vs time.
 % The largest rates will be plotted individually (determined by n2plot), 
 % while the rest are grouped into an "other" category.
+%
+% SPECIAL NOTE REGARDING COMBINATION OF LIKE REACTIONS
+% Reactions containing identical reactant names (but not necessarily the same products) will be
+% combined. For example, you might have two reactions like this:
+% A + hv -> B
+% A + hv -> C
+% If you are looking at the rates of species "A", the rates of these two reactions would be summed
+% in the output structure and plot.
+% For this example, the output SpRates.iRx_Loss would only contain the index from the first reaction.
+% All reactions contributing to the summed rate are tracked in the output SpRates.iRx_Loss_grouped.
 % 
 % INPUTS:
 % S: structure of model outputs. Must contain the following fields:
@@ -53,6 +63,11 @@ function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 %    SpRates.Loss:      matrix of loss reactions rates, dimensions nT x nRx
 %    SpRates.iRx_Loss:  index for loss reactions in original S.Chem structure, sorted like Lnames
 %    SpRates.iRx_Prod:  index for production reactions in original S.Chem structure, sorted like Pnames
+%    SpRates.iRx_Loss_grouped: cell array of indices for original loss reactions. Each cell may be a
+%                       scalar or a vector, depending on if "like" reactions were grouped for the total rate.
+%                       Note, the same index may appear multiple times in a cell if input Spname is a family and that reaction
+%                       contains multiple members the family.
+%    SpRates.iRx_Prod_grouped: Like above but for production reactions.
 %    ax:                axis handle to figure created. 
 %
 % 20120319 GMW      Created.
@@ -74,6 +89,7 @@ function [SpRates, ax] = PlotRates(Spname,S,n2plot,varargin)
 % 20210913 GMW      Fixed bug in family reaction summation, so that family cross reactions are now
 %                   properly accounted for (for example, LROx(CH3O2 + HO2) = 2*rate(CH3O2 + HO2) = LCH3O2 + LHO2
 % 20210915 GMW      Fixed bug that was causing iRx_Prod to be flipped upside down.
+% 20220603 GMW      Added _grouped index outputs for tracing when like reactions are summed.
 
 %%%%%DEAL WITH INPUTS%%%%%
 if iscell(Spname) && length(Spname) > 1 %family
@@ -179,13 +195,15 @@ end
 rct = Rparts(rSpnames);
 [rct_unique,iunq] = unique(rct);
 rSp_unique = nan(size(rSp,1),length(rct_unique));
+iRx_grouped = cell(length(rct_unique),1); %special tracking of all indices in a grouped reaction
 for i=1:length(rct_unique)
     j = ismember(rct,rct_unique{i});
     rSp_unique(:,i) = sum(rSp(:,j),2);
+    iRx_grouped{i} = iRx(j);
 end
 rct = rct_unique;
 rSp = rSp_unique;
-iRx = iRx(iunq);
+iRx = iRx(iunq); %NOTE, this line leads to indices of some reactions getting dropped b/c iunq only contains the first index.
 
 %%%%%SORT%%%%%
 rSpsum = sum(rSp,1);
@@ -193,6 +211,7 @@ rSpsum = sum(rSp,1);
 rSp = rSp(:,n);
 rct = rct(n);
 iRx = iRx(n);
+iRx_grouped = iRx_grouped(n);
 
 %%%%%SEPARATE LOSS AND PRODUCTION, SCALE%%%%%
 iL = rSpsum < 0;
@@ -200,6 +219,7 @@ Lall = rSp(:,iL);
 Lnames = rct(iL);
 Lsum = sum(Lall,2);
 iRx_Loss = iRx(iL);
+iRx_Loss_grouped = iRx_grouped(iL);
 
 if scale(1)==0,         Lall = Lall./repmat(-Lsum,1,sum(iL));
 elseif length(scale)>1, Lall = Lall.*repmat(scale,1,sum(iL));
@@ -225,6 +245,7 @@ Pall = fliplr(rSp(:,iP));
 Pnames = flipud(rct(iP));
 Psum = sum(Pall,2);
 iRx_Prod = flipud(iRx(iP));
+iRx_Prod_grouped = flipud(iRx_grouped(iP));
 
 if scale(1)==0,         Pall = Pall./repmat(Psum,1,sum(iP));
 elseif length(scale)>1, Pall = Pall.*repmat(scale,1,sum(iP));
@@ -339,6 +360,8 @@ if nargout
     SpRates.Loss = L2plot;
     SpRates.iRx_Loss = iRx_Loss;
     SpRates.iRx_Prod = iRx_Prod;
+    SpRates.iRx_Loss_grouped = iRx_Loss_grouped;
+    SpRates.iRx_Prod_grouped = iRx_Prod_grouped;
 end
 
 
