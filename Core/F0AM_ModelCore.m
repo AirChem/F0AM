@@ -132,7 +132,7 @@ if nargin==6
     SolarFlag = 1;
     
     % throw warning if Convergence options specified but convergence not enabled
-    if all(isfield('SolarParam',{'nDays','Converge'})) && SolarParam.nDays ~= -1
+    if all(isfield(SolarParam,{'nDays','Converge'})) && SolarParam.nDays ~= -1
         warning('F0AM_ModelCore:UnusedInput',...
             'SolarParam.Converge options specified, but convergence not enabled. Set SolarParam.nDays = -1 to enable.')
     end
