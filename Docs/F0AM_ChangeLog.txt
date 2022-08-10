@@ -7,6 +7,8 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 v4.2.2
 Release TBD
 
+Run2Init.m: Added code to overwrite model-derived InitConc with user-specified values (e.g. observations). Thanks Jessica Haskins!
+F0AM_ModelCore.m: Fixed bug in checking of SolarParam convergence options. Thanks Sandra Roberts.
 InitializeChemistry.m: added more reactions to list of exclusions for repetition warnings.
 PlotReactivity.m: fixed bug when using "all" or "sum" options and added sorting for "all" option.
 PlotRates.m: Added _grouped index outputs for tracing when like reactions are summed.

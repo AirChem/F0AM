@@ -1,12 +1,13 @@
-function [InitConc,Met] = Run2Init(S,pts2grab, obs_ICs)
-% function [InitConc,Met] = Run2Init(S,pts2grab)
+function [InitConc,Met] = Run2Init(S,pts2grab,InitConc_overwrite)
+% function [InitConc,Met] = Run2Init(S,pts2grab,InitConc_overwrite)
 % Grabs a subset of model results and puts them in the correct format for
 % input as initial model conditions.
+%
 % INPUTS:
 % S: Model output structure.
 % pts2grab: an index for which row(s) of model results to grab.
-% obs_ICs: a 3-column cell array identical in structure to InitConc, 
-%           which contains the observations you want to overwrite the 
+% InitConc_overwrite: a 3-column cell array identical in structure to InitConc, 
+%           which contains the values you want to overwrite the 
 %           values in the Run you're initializing to.  Useful if you do a 
 %           spin up letting things evolve, but want to nudge the things 
 %           that were actually measured back to their concentrations. 
@@ -19,35 +20,55 @@ function [InitConc,Met] = Run2Init(S,pts2grab, obs_ICs)
 % 20160327 GMW  Modified to deal with new Met fields.
 % 20200427 GMW  Changes to accomodate empty fields and family definitions.
 % 20210625 JDH  Add option to push overwrite of certain Initial Conditions.
-%               with observed values in obs_ICs.
-
-% If obs_ICs not passed then overwrite none of S with observations!  
-if nargin < 3;  obs_ICs=cell(1,3);  end 
+%               with observed values in InitConc_obs.
+% 20220810 GMW  Minor tweaks to variable naming.
+%               Changed indexing for overwriting InitConc.
 
 %%%%% CONCENTRATIONS %%%%%
+
+% create new InitConc
 nSp = length(S.Cnames);
 HoldMe = zeros(nSp,1);
 HoldMe(S.Chem.iHold) = 1;
 InitConc=cell(nSp,3);
-for i=1:nSp
-    % Determine if this species is in the list of observations .
-    mtch = strcmp({obs_ICs{:,1}}, S.Cnames{i});
-    obs_ind= find(mtch);
-    
-    if isempty(obs_ind)==1 % this species is not in obs_ICs. 
-        InitConc{i,1} = S.Cnames{i}; % so use values from the run. 
-        InitConc{i,2} = S.Conc.(S.Cnames{i})(pts2grab);
-        InitConc{i,3} = HoldMe(i);
-        
-    else  % we have an observed value we want to use instead. 
-        conc= cell2mat(obs_ICs(obs_ind,2)); % 2nd column is conc.
-        holdme_flag=obs_ICs(obs_ind,3); % 3rd is the hold me flag. 
+ for i=1:nSp
+     InitConc{i,1} = S.Cnames{i};
+     InitConc{i,2} = S.Conc.(S.Cnames{i})(pts2grab);
+     InitConc{i,3} = HoldMe(i);
+ end
+ 
+ % overwrite as desired with InitConc_overwrite
+ if nargin == 3
+     Onames = InitConc_overwrite(:,1);
+     [tf,loc] = ismember(Onames,S.Cnames); %loc gives location of each Oname in Cnames
+     
+     % do some checks before attempting overwrite
+     assert(all(tf),'Run2Init: species in InitConc_overwrite not found in S.Cnames.');
+     assert(length(pts2grab) == length(InitConc_overwrite{1,2}),'Run2Init: length of concentration vectors in InitConc_overwrite does not match length of pts2grab.');
+     
+     InitConc(loc,2:3) = InitConc_overwrite(:,2:3); %replace concentrations and holdme
+ end
 
-        InitConc{i,1} = S.Cnames{i};
-        InitConc{i,2} = double(conc);
-        InitConc{i,3} = vertcat(holdme_flag{:});        
-    end
-end
+ % Jessica's code for observation replacement
+% for i=1:nSp
+%     % Determine if this species is in the list of observations .
+%     mtch = strcmp({InitConc_overwrite{:,1}}, S.Cnames{i});
+%     obs_ind= find(mtch);
+%     
+%     if isempty(obs_ind)==1 % this species is not in InitConc_overwrite. 
+%         InitConc{i,1} = S.Cnames{i}; % so use values from the run. 
+%         InitConc{i,2} = S.Conc.(S.Cnames{i})(pts2grab);
+%         InitConc{i,3} = HoldMe(i);
+%         
+%     else  % we have an observed value we want to use instead. 
+%         conc= cell2mat(InitConc_overwrite(obs_ind,2)); % 2nd column is conc.
+%         holdme_flag=InitConc_overwrite(obs_ind,3); % 3rd is the hold me flag. 
+% 
+%         InitConc{i,1} = S.Cnames{i};
+%         InitConc{i,2} = double(conc);
+%         InitConc{i,3} = vertcat(holdme_flag{:});        
+%     end
+% end
 
 % families
 if ~isempty(S.Chem.Family)
