@@ -2,7 +2,7 @@
 
 Framework for 0-D Atmospheric Modeling
 
-Most recent public release: [**v4.2.1**](https://github.com/AirChem/F0AM/releases/latest)
+Most recent public release: [**v4.2.2**](https://github.com/AirChem/F0AM/releases/latest)
 
 [![DOI](https://zenodo.org/badge/163446406.svg)](https://zenodo.org/badge/latestdoi/163446406)
 
@@ -22,7 +22,7 @@ If F0AM is used to support a scientific publication, please cite the following r
 
 >*G. M. Wolfe, M. R. Marvin, S. J. Roberts, K. R. Travis, and J. Liao, The Framework for 0-D Atmospheric Modeling (F0AM) v3.1, Geoscientific Model Development, 9, 3309-3319, doi: 10.5194/gmd-9-3309-2016, 2016.*
 
-In addition, we ask that you send an email to Glenn so that the paper may be added to our [List of Publications Using F0AM](https://docs.google.com/spreadsheets/d/1fd7mWTzMiWuuqRG9eI9g0iYyt7DymLIVpDv_rArt5Z8/edit#gid=0).
+In addition, we ask that you add the paper to our [List of Publications Using F0AM](https://docs.google.com/spreadsheets/d/1fd7mWTzMiWuuqRG9eI9g0iYyt7DymLIVpDv_rArt5Z8/edit#gid=0).
 
 ### Questions and Issues
 It is preferred that all questions, suggestions, bug reports, insults, etc. be posted to the public [F0AM users group](https://groups.google.com/forum/#!forum/f0amusers). If your question is sensitive or you prefer to remain anonymous, you can alternatively email the contact listed above. NASA currently prohibits bilateral communication with designated countries, including China, so Glenn may not be allowed to converse with you via email. But anyone can use the forum!
@@ -37,6 +37,6 @@ F0AM is a community tool, and we encourage users to share new code/functionality
 
 ### Additional Notes
 
-Heterogeneous (aerosol) chemistry is not rigorously supported. Despair not, for there is a gas-to-particle partitioning extension, the [Washington Aerosol Module (WAM)](https://www.atmos.washington.edu/~thornton/washington-aerosol-module). This module is a branch from F0AMv3.1 and will be merged with the master branch in a future release.
+Heterogeneous (aerosol) chemistry is not rigorously supported. Despair not, for there is a gas-to-particle partitioning extension, the [Washington Aerosol Module (WAM)](https://www.atmos.washington.edu/~thornton/washington-aerosol-module). This module is a branch from F0AMv3.1 and will be merged with the master branch in a future release. Maybe.
 
 Happy modeling!
