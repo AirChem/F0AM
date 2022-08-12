@@ -36,6 +36,7 @@ function [Dclean,timeclean] = DataCleaner(D,time,dataInfo,filterIn,var2plot)
 % timeclean:    time vector shortened to the same length as variables in Dclean.
 %
 % 20160401 GMW
+% 20220812 GMW  Fixed multiple bugs.
 
 
 %% CHECK AND PARSE INPUTS  
@@ -44,6 +45,8 @@ req     = dataInfo(:,2);
 nanFill = dataInfo(:,3); %options include scalar, mean, median, interp, or []
 negFill = dataInfo(:,4); %options include scalar, nan, or [] (do nothing)
 
+Dclean = D;
+
 % check for vars not in D (e.g. typos)
 Dnames = fieldnames(D);
 tf = ismember(vars,Dnames);
@@ -51,11 +54,10 @@ if any(~tf)
     error(['DataCleaner: variables ' char(vars(~tf))  ' not found in input structure D.'])
 end
     
-% initialize output structure, check lengths
+% check lengths
 N = length(vars);
 L = nan(N,1);
 for i = 1:N
-    Dclean = D.(vars{i});
     L(i) = length(D.(vars{i}));
 end
 
@@ -88,21 +90,25 @@ for i=1:N
     Dnow = Dclean.(vars{i});
     
     % deal with negatives
-    j = Dnow<0;
-    if isscalar(negFill{i}) || isnan(negFill{i})
-        Dnow(j) = negFill{i};
+    if ~isempty(negFill{i})
+        j = Dnow<0;
+        if isscalar(negFill{i}) || isnan(negFill{i})
+            Dnow(j) = negFill{i};
+        end
     end
     
     % deal with nans
-    j = isnan(Dnow);
-    if isscalar(nanFill{i})
-        Dnow(j) = nanFill{i};
-    elseif strcmp(nanFill{i},'mean')
-        Dnow(j) = nanmean(Dnow);
-    elseif strcmp(nanFill{i},'median')
-        Dnow(j) = nanmedian(Dnow);
-    elseif strcmp(nanFill{i},'interp')
-        Dnow = ReplaceNaN(Dnow,time);
+    if ~isempty(nanFill{i})
+        j = isnan(Dnow);
+        if isscalar(nanFill{i})
+            Dnow(j) = nanFill{i};
+        elseif strcmp(nanFill{i},'mean')
+            Dnow(j) = nanmean(Dnow);
+        elseif strcmp(nanFill{i},'median')
+            Dnow(j) = nanmedian(Dnow);
+        elseif strcmp(nanFill{i},'interp')
+            Dnow = ReplaceNaN(Dnow,time);
+        end
     end
     
     % add required variables to filter
@@ -115,9 +121,9 @@ end
 
 %% APPLY FILTER
 for i=1:N
-     Dclean.(vars{i}) =  Dclean.(vars{i})(i);
+     Dclean.(vars{i}) =  Dclean.(vars{i})(filt);
 end
-timeclean = time(i);
+timeclean = time(filt);
 
 %% PLOTTING
 if ~isempty(var2plot)

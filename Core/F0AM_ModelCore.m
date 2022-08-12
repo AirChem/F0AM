@@ -12,7 +12,7 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 % 20160901 GMW    Work began on v3.2. See Changelog.
 % 20190108 GMW    Work began on v4. See Changelog.
 
-F0AMversion = 'F0AMv4';
+F0AMversion = 'F0AMv4.2.2';
 
 StartTime = now;
 

@@ -12,7 +12,7 @@ function calc_HybridJtables(test_flag,par_flag)
 %
 % Clear-sky TUVv5.2 solar spectra were calculated with the following inputs:
 %   SZA         0:5:90      degrees
-%   Altitude    0:1:15      km
+%   Altitude    0:1:22      km
 %   O3 column   100:50:600  DU
 %   albedo      0:0.2:1
 %   ground Alt  0           km

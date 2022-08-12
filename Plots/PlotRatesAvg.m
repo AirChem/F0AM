@@ -55,7 +55,9 @@ function SpRates = PlotRatesAvg(Spname,S,n2plot,varargin)
 % 20151106 GMW    Updates for F0AMv3.
 %                 Changed options for ptype and sumEq to name-value pairs.
 %                 Added options for unit and scale.
-%20210625  JDH    Added 'parent' option to plot to a specific subplot/ axis. 
+%20210625  JDH    Added 'parent' option to plot to a specific subplot/ axis.
+%20220810  GMW    Modified averaging to use trapezoidal integration if model output is not
+%                 evenly-spaced in time.
 
 %%%%%DEAL WITH INPUTS%%%%%
 %options
@@ -95,7 +97,18 @@ scale = unitX*scale;
 
 %%%%%GRAB AND SORT RATES%%%%%
 [rSp,rSpnames] = ExtractRates(Spname,S,sumEq);
-rSp = mean(rSp(pts2avg,:),1);
+
+%%%% INTEGRATE/AVERAGE %%%%%
+dT = unique(diff(S.Time));
+if length(dT) == 1
+    rSp = mean(rSp(pts2avg,:),1); %straight average evenly spaced data
+else
+    % check that pts2avg is not broken up first
+    i = find(pts2avg); %index
+    assert(all(diff(i) == 1),'PlotRatesAvg: If Time is not evenly spaced, pts2avg must be a single continuous chunk.')
+    
+    rSp = trapz(S.Time(pts2avg),rSp(pts2avg,:));
+end
 
 %%%%%COMBINE LIKE REACTIONS%%%%%
 [rct,prd] = Rparts(rSpnames);
