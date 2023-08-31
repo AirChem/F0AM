@@ -572,7 +572,7 @@ S = orderfields(S);
 
 %%%%%SAVING%%%%%
 if strcmpi(ModelOptions.SavePath,'DoNotSave')
-    if ModelOptions.Verbos >= 1
+    if ModelOptions.Verbose >= 1
         disp('MODEL OUTPUT NOT SAVED.')
     end
 else

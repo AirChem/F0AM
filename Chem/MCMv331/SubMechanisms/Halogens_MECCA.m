@@ -7,6 +7,9 @@
 % 
 % 20150928 DA
 % 20160307 GMW  Changed J-values names, added comments.
+% 20230705 GMW	Fixed CLNO2 photolysis frequency from J82 to Jn23.
+%				Added k_CLO_CLO rate constant.
+%               Fixed goofy 3-body reactions for C2H4 + BR/CL (removed O2 as explicit reactant)
 
 SpeciesToAdd = {...
 'BR'; 'BR2'; 'BRCL'; 'BRNO3'; 'BRNO2'; 'BRO'; 'C2H2'; 'C2H4'; 'C2H6'; 'CCL4'; 'CF2CL2'; ...
@@ -22,6 +25,7 @@ AddSpecies
 
 % get a few extra rate constants
 k_BRO_NO2 = k_3rd_iupac(T,M,4.7e-31,3.1,1.8e-11,0,.4);
+k_CLO_CLO = ((2.0e-32.*(T/300).^-4).*M.*(1.0e-11))./((2.0e-32.*(T/300).^-4).*M+(1.0e-11)).*10.^(log10(0.45)./(1+(log10((2.0e-32.*(T/300).^-4).*M./(1.0e-11))./(0.75-1.27*log10(0.45))).^2)); %IUPAC
 G7402a_yield = 0.8; %BRO + CH3O2 BRanching; Uncertainty: 0.8 +/- 10%
 
 %start reactions
@@ -200,9 +204,9 @@ Gstr{i,1} = 'CH3CCL3'; Gstr{i,2} = 'OH';
 fCH3CCL3(i)=fCH3CCL3(i)-1; fOH(i)=fOH(i)-1; fH2O(i)=fH2O(i)+1; fCL(i)=fCL(i)+3; 
 
 i=i+1;
-Rnames{i} = 'CL + C2H4 + O2 = HOCH2CH2O2 + HCL';
+Rnames{i} = 'CL + C2H4 = HOCH2CH2O2 + HCL';
 k(:,i) = k_3rd_iupac(T,M,1.85E-29,3.3,6.0E-10,0.0,0.4);
-Gstr{i,1} = 'CL'; Gstr{i,2} = 'C2H4'; Gstr{i,3} = 'O2'; 
+Gstr{i,1} = 'CL'; Gstr{i,2} = 'C2H4'; 
 fCL(i)=fCL(i)-1; fC2H4(i)=fC2H4(i)-1; fHOCH2CH2O2(i)=fHOCH2CH2O2(i)+1; fHCL(i)=fHCL(i)+1; 
 
 i=i+1;
@@ -344,9 +348,9 @@ Gstr{i,1} = 'CH3BR'; Gstr{i,2} = 'OH';
 fCH3BR(i)=fCH3BR(i)-1; fOH(i)=fOH(i)-1; fH2O(i)=fH2O(i)+1; fBR(i)=fBR(i)+1; 
 
 i=i+1;
-Rnames{i} = 'BR + C2H4 + O2 = HOCH2CH2O2 + HBR';
-k(:,i) = 2.8E-13.*exp(224./T)./(1.+1.13E24.*exp(-3200./T)./(.21.*M));
-Gstr{i,1} = 'BR'; Gstr{i,2} = 'C2H4'; Gstr{i,3} = 'O2'; 
+Rnames{i} = 'BR + C2H4 = HOCH2CH2O2 + HBR';
+k(:,i) = 2.8E-13.*exp(224./T)./(1.+1.13E24.*exp(-3200./T)).*0.21.*M;
+Gstr{i,1} = 'BR'; Gstr{i,2} = 'C2H4';
 fBR(i)=fBR(i)-1; fC2H4(i)=fC2H4(i)-1; fHOCH2CH2O2(i)=fHOCH2CH2O2(i)+1; fHBR(i)=fHBR(i)+1; 
 
 i=i+1;
@@ -497,7 +501,7 @@ fCLO(i)=fCLO(i)-1; fCL(i)=fCL(i)+1; fO(i)=fO(i)+1;
 
 i=i+1;
 Rnames{i} = 'CLNO2 + hv = CL + NO2';
-k(:,i) = J82;
+k(:,i) = Jn23;
 Gstr{i,1} = 'CLNO2';
 fCLNO2(i)=fCLNO2(i)-1; fCL(i)=fCL(i)+1; fNO2(i)=fNO2(i)+1;
 

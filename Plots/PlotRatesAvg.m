@@ -58,6 +58,7 @@ function SpRates = PlotRatesAvg(Spname,S,n2plot,varargin)
 %20210625  JDH    Added 'parent' option to plot to a specific subplot/ axis.
 %20220810  GMW    Modified averaging to use trapezoidal integration if model output is not
 %                 evenly-spaced in time.
+% 20230831 GMW    Further modifications to averaging to handle variable time spacing.
 
 %%%%%DEAL WITH INPUTS%%%%%
 %options
@@ -100,14 +101,28 @@ scale = unitX*scale;
 
 %%%% INTEGRATE/AVERAGE %%%%%
 dT = unique(diff(S.Time));
-if length(dT) == 1
-    rSp = mean(rSp(pts2avg,:),1); %straight average evenly spaced data
+if length(dT) == 1 || S.ModelOptions.LinkSteps == 0
+    rSp = mean(rSp(pts2avg,:),1); %straight average
 else
-    % check that pts2avg is not broken up first
+    % if steps linked but dT variable, need to integrate
+
+    % divide into contiguous subsets
     i = find(pts2avg); %index
-    assert(all(diff(i) == 1),'PlotRatesAvg: If Time is not evenly spaced, pts2avg must be a single continuous chunk.')
+    j = find(diff(i)~=1);
+    chunkstart = [i(1); i(j+1)];
+    chunkstop = [i(j); i(end)];
+    chunks = [chunkstart chunkstop];
+    Nc = size(chunks,1);
     
-    rSp = trapz(S.Time(pts2avg),rSp(pts2avg,:));
+    % loop over chunks
+    rSp_chunk = nan(Nc,size(rSp,2));
+    dT = nan(Nc,1);
+    for i = 1:Nc
+        c = chunks(i,1):chunks(i,2); % index for chunk
+        dT(i) = S.Time(c(end)) - S.Time(c(1)); % time interval
+        rSp_chunk(i,:) = trapz(S.Time(c),rSp(c,:)); %integrate rates over chunk
+    end
+    rSp = sum(rSp_chunk,1) ./ sum(dT); %sum up
 end
 
 %%%%%COMBINE LIKE REACTIONS%%%%%

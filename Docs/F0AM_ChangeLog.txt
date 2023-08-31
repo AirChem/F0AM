@@ -4,17 +4,54 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.3
+20230830
+
+F0AM_ModelCore.m
+ - fixed a non-critical typo
+
+InitializeChemistry.m
+ - added catch statements when evaluating Chemfiles to throw a warning if the mechanism is really large.
+
+Halogens_MECCA.m
+ - Fixed CLNO2 photolysis frequency from J82 to Jn23.
+ - Added k_CLO_CLO rate constant.
+ - Fixed goofy 3-body reactions for C2H4 + BR/CL (removed O2 as explicit reactant)
+ 
+ PlotRatesAvg.m
+  - Improved handling of averaging for model runs with variable time spacing (and squashed a bug in the process).
+
+New/modified MCM submechanisms:
+ - C3H4_OH.m (propadiene + OH)
+ - HMHP_OH.m (hydroxymethyl hydrogen peroxide + OH)
+ - Slow_PAA_OH.m (updated PAA rate coefficient)
+
+New mechanism: CRACMM1. Thanks EPA.
+
+ExampleSetup_FlightSS.m
+ - Added CRACMM1 option
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.2.2
 20220812
 
 Run2Init.m: Added code to overwrite model-derived InitConc with user-specified values (e.g. observations). Thanks Jessica Haskins!
+
 F0AM_ModelCore.m: Fixed bug in checking of SolarParam convergence options. Thanks Sandra Roberts.
+
 InitializeChemistry.m: added more reactions to list of exclusions for repetition warnings.
+
 PlotReactivity.m: fixed bug when using "all" or "sum" options and added sorting for "all" option.
+
 PlotRates.m: Added _grouped index outputs for tracing when like reactions are summed.
+
 PlotRatesAvg.m: Modified averaging to use trapezoidal integration if model output is not evenly-spaced in time.
+
 sumRates_ROX.m: In "Production" section, modified jHONO definition to exclude HONO + OH and added special treatment in case there is no net production (HONO is in equilbrium with OH + NO).
+
 ParsePairs.m: Added some error checking to mitigate possible issues with incorrect input of name-value pairs.
+
 DataCleaner.m: multiple bug fixes because someone never actually tested this function.
 
 Extended calculation of Hybrid J-values from 15 to 22 km. Affected files:

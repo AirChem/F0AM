@@ -49,6 +49,7 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(M
 % 20160304 GMW  Modified to accept J, K function outputs as structures.
 % 20190123 GMW  Added iLR output
 % 20220620 GMW  Added more reactions to the list of exclusions for repetition warnings.
+% 20230620 GMW  Better error checking for nRx
 
 %% INITIALIZE VARIABLES
 struct2var(Met)
@@ -117,8 +118,33 @@ end
 %% ACCUMULATE CHEMISTRY
 i=0; %index for adding reactions
 for j=3:length(ChemFiles)
-    eval(ChemFiles{j});
+    
+    try
+        eval(ChemFiles{j});
+        
+    catch ME
+        if strcmp(ME.identifier,'MATLAB:badsubscript')
+            msg = ['Total number of reactions or species in mechanism exceeds the initial guess of ',...
+                num2str(nRx), ' reactions, ', num2str(nSp), ' species. ',...
+                'Confirm you are not double-calling a large mechanism in ChemFiles. ',...
+                'This can be solved by increasing the nRx and/or nSp parameters in InitializeChemistry.m, but beware of memory limitations.'];
+            causeException = MException('F0AM:InitializeChemistry:BigAssMechanism',msg);
+            ME = addCause(ME,causeException);
+        end
+        rethrow(ME)
+    end
+    
 end
+
+% catch ME
+%    if (strcmp(ME.identifier,'MATLAB:catenate:dimensionMismatch'))
+%       msg = ['Dimension mismatch occurred: First argument has ', ...
+%             num2str(size(A,2)),' columns while second has ', ...
+%             num2str(size(B,2)),' columns.'];
+%         causeException = MException('MATLAB:myCode:dimensions',msg);
+%         ME = addCause(ME,causeException);
+%    end
+%    rethrow(ME)
 
 %% CLEAN UP
 iC = ~cellfun('isempty',Cnames); %flag non-empty cells

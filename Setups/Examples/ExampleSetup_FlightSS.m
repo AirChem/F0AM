@@ -11,8 +11,9 @@
 
 if length(dbstack)==1 %only execute if top-level (skip if called from ExampleSetup_MechCompare.m)
     clear
-    MECHANISM = 'GEOSCHEMv1207';
-    % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, SAPRC07B, GEOSCHEMv902, GEOSCHEMv1207
+    MECHANISM = 'CB6r2';
+    % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, SAPRC07B, GEOSCHEMv902, GEOSCHEMv1207,
+    % CRACMM1
     makeplots = 1; %flag 0 or 1 for making plots after run
 end
 
@@ -80,6 +81,9 @@ switch MECHANISM
     case {'SAPRC07B'}
         nJNO2 = 'JNO2_06';
         nJO3 = 'JO3O1D_06';
+    case {'CRACMM1'}
+        nJNO2 = 'JNO2_RACM2';
+        nJO3 = 'JO3O1D_NASA06';
     otherwise
         error(['Invalid mechanism "' mechanism '".'])
 end
@@ -112,8 +116,8 @@ Examples are given here for each of the mechanisms currently available.
 
 InitConc = {...
     %names          conc(ppb)                   HoldMe
-    'CH4'           D.CH4_ppb                   1;...
-    'H2'            550                         1;...
+    'CH4'           D.CH4_ppb                   1;... %note, CRACMM treats this as fixed
+    'H2'            550                         1;... %note, CRACMM treats this as fixed
     'CO'            D.CO_ppbv                   1;...
     'O3'            D.O3_ppbv                   1;...
     
@@ -129,11 +133,12 @@ InitConc = {...
     };
 
 %change names if needed
+% methanol, isoprene, formaldehyde
 switch MECHANISM
     case {'MCMv331','MCMv32'} %default
     case {'CB05','CB6r2'}
         InitConc(8:10,1) = {'MEOH','ISOP','FORM'};
-    case 'RACM2'
+    case {'RACM2','CRACMM1'}
         InitConc(8:10,1) = {'MOH','ISO','HCHO'};
     case {'GEOSCHEMv902','GEOSCHEMv1207'}
         InitConc(8:10,1) = {'MOH','ISOP','CH2O'};
@@ -203,6 +208,12 @@ switch MECHANISM
             'SAPRC07B_J(Met,2)';...
             'SAPRC07B_AllRxns'};
         
+        case 'CRACMM1'
+         ChemFiles = {...
+            'CRACMM1_aq_K(Met)';...
+            'CRACMM1_aq_J(Met,2)';...
+            'CRACMM1_aq_AllRxns'};
+        
 end
 
 %% DILUTION
@@ -258,36 +269,49 @@ switch MECHANISM
         nISOPO2 = 'ISOPBO2'; %just pick one
         nANs    = {'ANs','ISOPANO3','ISOPBNO3','ISOPCNO3','ISOPDNO3','MVKNO3','MACRNB','MACRNO3'}; %isopene subset
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+        nOH     = 'OH';
     case {'CB05'}
         nHCHO   = 'FORM';
         nCH3O2  = 'MEO2';
         nISOPO2 = 'XO2'; %not quite correct b/c of lumping, but whatevs
         nANs    = {'ANs','NTR'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+        nOH     = 'OH';
     case {'CB6r2'}
         nHCHO   = 'FORM';
         nCH3O2  = 'MEO2';
         nISOPO2 = 'ISO2';
         nANs    = {'ANs','INTR'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
-    case 'RACM2'
+        nOH     = 'OH';
+    case {'RACM2'}
         nHCHO   = 'HCHO';
         nCH3O2  = 'MO2';
         nISOPO2 = 'ISOP';
         nANs    = {'ANs','ISON','ONIT'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+        nOH     = 'OH';
+    case {'CRACMM1'}
+        nHCHO   = 'HCHO';
+        nCH3O2  = 'MO2';
+        nISOPO2 = 'ISOP';
+        nANs    = {'ANs','ISON','ONIT'};
+        nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+        nOH     = 'HO'; %seriously???
     case {'GEOSCHEMv902','GEOSCHEMv1207'}
         nHCHO   = 'CH2O';
         nCH3O2  = 'MO2';
         nISOPO2 = 'RIO2';
         nANs    = {'ANs','ISOPNB','ISOPND','MACRN','MVKN'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
+        nOH     = 'OH';
     case 'SAPRC07B'
         nHCHO   = 'HCHO';
         nCH3O2  = 'MEO2';
         nISOPO2 = 'RO2C'; %not specific to ISOP
         nANs    = {'ANs','RNO3'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'};   %note, not complete
+        nOH     = 'OH';
 end
 
 %%%%% J-VALUE SCALING %%%%% 
@@ -352,7 +376,7 @@ PlotReactivity(nCH3O2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
 PlotReactivity(nISOPO2,S,RO2reactants,'ptype','fill','scale',0,'sumEq',1);
 
 % And, how about checking out HOx production and loss (excluding reactions that interconvert HOx)
-PlotRates({'HOx','OH','HO2'},S,10,'sumEq',1,'ptype','line')
+PlotRates({'HOx',nOH,'HO2'},S,10,'sumEq',1,'ptype','line')
 
 end %end makeplots if
 
