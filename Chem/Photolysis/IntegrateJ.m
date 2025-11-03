@@ -107,6 +107,8 @@ if ischar(CSin)            %text file
         cs(zerojunk,:) = [];
     else
         cs = readmatrix(CSin);
+	zerojunk = cs(:,1) == 0; %sometimes get bad values from csv files
+        cs(zerojunk,:) = [];
     end
     
     wl_cs = cs(:,1);
