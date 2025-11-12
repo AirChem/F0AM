@@ -23,9 +23,10 @@ function J = J_Hybrid(SZA,ALT,O3col,albedo)
 %               Regenerated tables using correct US Standard Atmosphere T/P profiles.
 %               Cleaned comments.
 % 20190210 GMW  Added check for interpolation limits
+% 20251112 GMW  Removed line limiting SZA to <= 90 degrees.
 
 
-SZA(SZA>90)=90;
+% SZA(SZA>90)=90;
 
 load('HybridJtables.mat','Jhybrid','SZAhybrid','ALThybrid','O3Chybrid','ALBhybrid')
 

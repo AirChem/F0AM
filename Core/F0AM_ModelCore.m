@@ -1,4 +1,4 @@
-function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam)
+function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam,UserData)
 % S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarParam)
 % Core execution for the Framework for 0-D Atmospheric Modeling (F0AMv3).
 % Descended from the University of Washington Chemical Model (UWCM), first beget 20101211 by GMW/JAT.
@@ -11,8 +11,12 @@ function S = F0AM_ModelCore(Met,InitConc,ChemFiles,BkgdConc,ModelOptions,SolarPa
 % 20150601 GMW    Work began on v3.0. See Changelog.
 % 20160901 GMW    Work began on v3.2. See Changelog.
 % 20190108 GMW    Work began on v4. See Changelog.
+% 20241105 GMW    Version 4.4. See Changelog.
 
-F0AMversion = 'F0AMv4.2.2';
+
+%% INITIALIZATION
+
+F0AMversion = 'F0AMv4.4';
 
 StartTime = now;
 
@@ -31,6 +35,10 @@ Met      = breakout(Met(:,2),Met(:,1));
 InitConc = breakout(InitConc(:,2),InitConc(:,1));
 BkgdConc = breakout(BkgdConc(:,2),BkgdConc(:,1));
 
+if nargin<7
+    UserData = [];
+end
+
 %% MODELOPTIONS DEFAULTS/CHECKS
 FieldInfo = {...
     %Valid              %Required       %Default
@@ -47,7 +55,7 @@ FieldInfo = {...
 ModelOptions = CheckStructure(ModelOptions,FieldInfo);
 
 if ModelOptions.Verbose >= 1
-    disp(['INITIALIZING ' F0AMversion '...'])
+    disp(['RUNNING ' F0AMversion '...'])
 end
 
 % check for incompatible options
@@ -104,14 +112,13 @@ end
 % check other fields
 FieldInfo = InitializeMet;
 try
-    Met = CheckStructure(Met,FieldInfo,'J');
+    Met = CheckStructure(Met,FieldInfo,'J'); %ignores anything starting with "J"
 catch ME
     msg = ' To add new variables to Met, modify the list in InitializeMet.m.';
     causeException = MException('F0AM:UnspecifiedInput',msg);
     ME = addCause(ME,causeException);
     rethrow(ME)
 end 
-% if isempty(Met.LFlux), Met = rmfield(Met,'LFlux'); end % why? commented out 20200822
 Met = Check4NanNeg(Met);
 
 % j correction checks
@@ -128,7 +135,7 @@ Mnames = fieldnames(Met);
 
 %% SOLARPARAM DEFAULTS/CHECKS
 
-if nargin==6
+if nargin>5 & ~isempty(SolarParam)
     SolarFlag = 1;
     
     % throw warning if Convergence options specified but convergence not enabled
@@ -169,7 +176,8 @@ if nargin==6
     location.latitude   = SolarParam.lat;
     location.altitude   = SolarParam.alt;
     sun = sun_position(sTime,location); %zenith and azimuth angles of sun
-    sun.zenith(sun.zenith>90) = 90;
+%     sun.zenith(sun.zenith>90) = 90; %20251104 GMW commented out. This creates issues at high
+%     latitudes/twilight.
     
     if isfield(Met,'SZA') && ~isempty(Met.SZA)
         warning('F0AM_ModelCore:UnusedInput',...
@@ -563,7 +571,7 @@ end
 %%%%%PUT VARIABLES INTO STRUCTURE%%%%%
 iRO2 = Chem.iRO2; %legacy v3.1. To be removed in the future.
 vars ={'Met','InitConc','BkgdConc','ModelOptions','SolarParam',...
-    'Cnames','Conc','Time','StepIndex','iRO2','Chem'};
+    'Cnames','Conc','Time','StepIndex','iRO2','Chem','UserData'};
 S = struct();
 for i=1:length(vars)
     S(1).(vars{i}) = eval(vars{i});

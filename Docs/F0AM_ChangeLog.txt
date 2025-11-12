@@ -4,6 +4,51 @@ Questions? --> Glenn Wolfe, glenn.m.wolfe@nasa.gov or F0AMusers@googlegroups.com
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+v4.4
+20251112
+
+New mechanisms:
+ - CRACMM2. Thanks Havala Pye and Nash Skipper.
+ - CB7. Thanks Emily Hunt.
+ 
+ New scripts:
+  - F0AMpath.m: simple function to get the F0AM root directory.
+  - EKMAgenerator.m: new function to extend VOC and NOx inputs for an examination of chemical sensitivities.
+   - ExampleSetup_EKMA.m: An example of how to use the above function
+   
+Hybrid photolysis:
+	Extended altitude limit to 22 km and SZA limit to 100 degrees.
+	This required changes/updates to:
+	 - calc_HybridJtables.m
+	 - HybridJtables.mat
+	 - J_Hybrid.m
+	 - TUV_ActFlux_tables.mat
+	 
+F0AM_ModelCore.m
+  - Updated version number.
+  - SOLARPARAM DEFAULTS/CHECKS: Commented out line forcing SZA to not exceed 90 degrees
+  - Added optional input "UserData" to pass auxiliary variables through to the save file.
+ 
+ExampleSetup_FlightSS.m
+ - Added CRACMM2 and CB7 options
+ 
+ExampleSetup_MechCompare.m
+ - Added CRACMM2 and CB7 options
+ - Added some code for comparing production and loss rates (useful for debugging a new mechanism)
+ 
+InitializeMet.m
+  - Added a check and comments to avoid variables starting with j/J. These are reserved for photolysis frequencies.
+  - Added comment about defaults being non-empty.
+  
+InitializeChemistry.m
+   - Removed jcorr_all being forced to 1 if SZA > 90. This may create really large jcorr values when parameterized J-values are near (but not) 0. We will see.
+   
+GenFilePath.m
+ - changed to use F0AMpath.m
+ 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v4.3
 20230830
 

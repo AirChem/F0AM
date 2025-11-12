@@ -7,13 +7,26 @@
 %   switch-case statements that would not be needed if doing this with a single mechanism.
 % Read comments in each section for a guided tour.
 %
-% 20200417 GMW Added SAPRC07B
+% 20200417 GMW  Added SAPRC07B
+% 20251103 GMW  Added CB7 and CRACMM1/2
 
 if length(dbstack)==1 %only execute if top-level (skip if called from ExampleSetup_MechCompare.m)
     clear
-    MECHANISM = 'CB6r2';
-    % choices are MCMv331, MCMv32, CB05, CB6r2, RACM2, SAPRC07B, GEOSCHEMv902, GEOSCHEMv1207,
+    
+    MECHANISM = 'CRACMM2';
+    % choices are :
+    % MCMv331
+    % MCMv32
+    % CB05
+    % CB6r2
+    % CB7
+    % RACM2
+    % SAPRC07B
+    % GEOSCHEMv902
+    % GEOSCHEMv1207
     % CRACMM1
+    % CRACMM2
+    
     makeplots = 1; %flag 0 or 1 for making plots after run
 end
 
@@ -41,7 +54,8 @@ SolarParam is structure specifying the time and location for each set of observa
 This will be used to calculate solar zenith angles vs time of day.
 "startTime" is a 6-column date vector in UTC.
 "nDays" is the number of days to loop through.
-    In practice the model should be run until steady state is reached for the species of interest.
+    For true research, the model should be run until steady state is reached for the species of interest.
+    For this example, we use 1 day to minimize runtime.
 %}
 
 o = ones(size(D.AOCTimewave));
@@ -75,13 +89,13 @@ switch MECHANISM
     case {'MCMv331','MCMv32'}
         nJNO2 = 'J4'; 
         nJO3 = 'J1';
-    case {'CB05','CB6r2','RACM2','GEOSCHEMv902','GEOSCHEMv1207'}
+    case {'CB05','CB6r2','CB7','RACM2','GEOSCHEMv902','GEOSCHEMv1207'}
         nJNO2 = 'JNO2'; 
         nJO3 = 'JO1D';
     case {'SAPRC07B'}
         nJNO2 = 'JNO2_06';
         nJO3 = 'JO3O1D_06';
-    case {'CRACMM1'}
+    case {'CRACMM1','CRACMM2'}
         nJNO2 = 'JNO2_RACM2';
         nJO3 = 'JO3O1D_NASA06';
     otherwise
@@ -107,9 +121,8 @@ Met = {...
 Concentrations are initialized using observations or fixed values.
 Species with HoldMe = 1 will be held constant throughout each step.
 Species with HoldMe = 0 are only initialized at the start of the run.
-In this case, we hold NO2 constant and let NO float so that the radical chemistry will respond to
-    changing SZA. oVOC are also allowed to float since we want to use these to evaluate model
-    performance.
+Below also shows an example of "family conservation," which will hold a chemical family (NOx, in
+this case) constant throughout the run. Please see the user manual for more information.
 
 Examples are given here for each of the mechanisms currently available.
 %}
@@ -136,9 +149,9 @@ InitConc = {...
 % methanol, isoprene, formaldehyde
 switch MECHANISM
     case {'MCMv331','MCMv32'} %default
-    case {'CB05','CB6r2'}
+    case {'CB05','CB6r2','CB7'}
         InitConc(8:10,1) = {'MEOH','ISOP','FORM'};
-    case {'RACM2','CRACMM1'}
+    case {'RACM2','CRACMM1','CRACMM2'}
         InitConc(8:10,1) = {'MOH','ISO','HCHO'};
     case {'GEOSCHEMv902','GEOSCHEMv1207'}
         InitConc(8:10,1) = {'MOH','ISOP','CH2O'};
@@ -184,6 +197,12 @@ switch MECHANISM
             'CB6r2_J(Met,2)';...
             'CB6r2_AllRxns'};
         
+    case 'CB7'
+        ChemFiles = {...
+            'CB7_K(Met)';...
+            'CB7_J(Met,2)';...
+            'CB7_AllRxns'};
+        
     case 'RACM2'
          ChemFiles = {...
             'RACM2_K(Met)';...
@@ -208,11 +227,17 @@ switch MECHANISM
             'SAPRC07B_J(Met,2)';...
             'SAPRC07B_AllRxns'};
         
-        case 'CRACMM1'
-         ChemFiles = {...
+    case 'CRACMM1'
+        ChemFiles = {...
             'CRACMM1_aq_K(Met)';...
             'CRACMM1_aq_J(Met,2)';...
             'CRACMM1_aq_AllRxns'};
+        
+    case 'CRACMM2'
+        ChemFiles = {...
+            'CRACMM2_K(Met)';...
+            'CRACMM2_J(Met,2)';...
+            'CRACMM2_AllRxns'};
         
 end
 
@@ -277,7 +302,7 @@ switch MECHANISM
         nANs    = {'ANs','NTR'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
         nOH     = 'OH';
-    case {'CB6r2'}
+    case {'CB6r2','CB7'}
         nHCHO   = 'FORM';
         nCH3O2  = 'MEO2';
         nISOPO2 = 'ISO2';
@@ -291,7 +316,7 @@ switch MECHANISM
         nANs    = {'ANs','ISON','ONIT'};
         nNOy    = {{'NOx','NO','NO2'},'PAN',nANs,'HNO3'}; %note, not complete
         nOH     = 'OH';
-    case {'CRACMM1'}
+    case {'CRACMM1','CRACMM2'}
         nHCHO   = 'HCHO';
         nCH3O2  = 'MO2';
         nISOPO2 = 'ISOP';

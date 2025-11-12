@@ -50,6 +50,8 @@ function [Cnames,Rnames,k,f,iG,iRO2,jcorr,jcorr_all,iLR] = InitializeChemistry(M
 % 20190123 GMW  Added iLR output
 % 20220620 GMW  Added more reactions to the list of exclusions for repetition warnings.
 % 20230620 GMW  Better error checking for nRx
+% 20251104 GMW  Minor changes to jcorr initialization to avoid /0 warnings.
+%               Also removed line forcing jcorr to 1 for SZA>90.
 
 %% INITIALIZE VARIABLES
 struct2var(Met)
@@ -93,9 +95,11 @@ if ~isempty(ChemFiles{2})
         [iCon,Mloc] = ismember(Jnames,Mnames); %flag for Jnames appearing in Mnames, and location in Mnames
         if any(iCon)
             jvalCon = eval(['[' cellstr2str(Mnames(Mloc(iCon))) ']']); %matrix of constrained J
-            jcorr_all(:,iCon) = jvalCon./jval(:,iCon); %might get /0 warning
-            jcorr_all(jval==0) = 1;
-            jcorr_all(SZA>=90,:) = 1;
+            jvalParam = jval(:,iCon); % j-values from parameterization
+            jvalParam(jvalParam==0) = jvalCon(jvalParam==0); %avoid /0 warnings
+            jcorr_all(:,iCon) = jvalCon./jvalParam;
+%             jcorr_all(jval==0) = 1; %removed 20251104
+%             jcorr_all(SZA>=90,:) = 1;
         end
         
         % determine generic scaling factor for non-constrained J

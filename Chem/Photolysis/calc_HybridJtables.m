@@ -11,11 +11,11 @@ function calc_HybridJtables(test_flag,par_flag)
 % MATLAB's Parallel Computing Toolbox must be present for this to work.
 %
 % Clear-sky TUVv5.2 solar spectra were calculated with the following inputs:
-%   SZA         0:5:90      degrees
-%   Altitude    0:1:22      km
-%   O3 column   100:50:600  DU
-%   albedo      0:0.2:1
-%   ground Alt  0           km
+%   ALT = 0:1:22;
+%   SZA = [0:5:80 82:2:100]; %closer spacing to better capture falloff at twilight
+%   O3col = 100:50:600;
+%   albedo = 0:0.2:1;
+%   ground Alt  0 km
 %   AOD         0.235       
 % TUV solar spectra are contained in "TUV_ActFlux_tables.mat", 
 % which was generated via calc_TUV_ActFlux_tables.m (available on request).
@@ -32,6 +32,8 @@ function calc_HybridJtables(test_flag,par_flag)
 %               Replaced old Met profiles (lapse rate = 9.8 K/km) with true US Standard Atmosphere.
 %               Added test case and plot code.
 % 20190123 GMW  Added parallelization option.
+% 20251112 GMW  Extended altitude and SZA limits.
+%               Removed line forcing J's to 0 if SZA>90.
 
 %% DEFAULTS
 if nargin<1, test_flag = 0; end
@@ -130,7 +132,7 @@ end
 J = struct;
 for i=1:nJ
     J.(Jnames{i}) = reshape(Jall(:,i),Ls,Lb,Lo,La);
-    J.(Jnames{i})(SZA==90,:,:,:) = 0; %sometimes not quite zero
+%     J.(Jnames{i})(SZA==90,:,:,:) = 0; %sometimes not quite zero
 end
 
 %% PLOT OR SAVE

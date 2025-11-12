@@ -2,15 +2,18 @@ function MetInfo = InitializeMet()
 % function MetInfo = InitializeMet()
 % Generates a cell array specifying meteorological variables and their default values.
 % Any parameter specified here will be available when initializing F0AM chemistry scripts.
+% NOTE: Met variable names may NOT start with the letter j/J (other than jcorr).
+%   This requirement stems from the optional use of observed J-values in the Met input.
 % 
 % INPUTS: none.
 %
 % OUTPUTS: MetInfo is a cell array with three columns:
 %   1) The name of the variable
 %   2) A logical flag for whether or not it is required (typically 0 except for P and T)
-%   3) Default value (scalar)
+%   3) Default value (scalar). Cannot be empty (except for P, T, and water).
 %
 % 20180219 GMW  Moved from F0AM_ModelCore.m
+% 20251104 GMW  Added caution about variable names starting with J, and a check at the end.
 
 MetInfo = {...
     %Name           %Required?      %Default Value
@@ -26,7 +29,7 @@ MetInfo = {...
     % PHOTOLYSIS
     'SZA'           0               30;...  % solar zenith angle, degrees
     'jcorr'         0               1;...   % j-value correction factor
-    'LFlux'         0               [];...  % actinic flux spectrum
+    'LFlux'         0               [];...  % actinic flux spectrum (text file)
     'ALT'           0               500;... % altitude, m asl
     'O3col'         0               300;... % overhead ozone column, DU
     'albedo'        0               0.1;... % surface albedo
@@ -58,5 +61,12 @@ MetInfo = {...
     % AEROSOL COMPOSITION
     'pNO3'          0               0;... % particulate nitrate, molec/cm^3
     };
+
+% double-check for people who don't read comments...
+tf = startsWith(MetInfo(:,1),'J','ignorecase',1);
+if sum(tf) > 1
+    error('F0AM_ModelCore:UnallowedMetName',...
+        'User-added variable names in InitalizeMet.m may not start with j/J.')
+end
 
 

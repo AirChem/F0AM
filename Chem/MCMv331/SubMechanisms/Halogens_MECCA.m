@@ -10,6 +10,7 @@
 % 20230705 GMW	Fixed CLNO2 photolysis frequency from J82 to Jn23.
 %				Added k_CLO_CLO rate constant.
 %               Fixed goofy 3-body reactions for C2H4 + BR/CL (removed O2 as explicit reactant)
+% 20231115 GMW  Fixed photolysis frequencies for CL2 and CLO (J32/33 to Jn32/33)
 
 SpeciesToAdd = {...
 'BR'; 'BR2'; 'BRCL'; 'BRNO3'; 'BRNO2'; 'BRO'; 'C2H2'; 'C2H4'; 'C2H6'; 'CCL4'; 'CF2CL2'; ...
@@ -489,13 +490,13 @@ fBRCL(i)=fBRCL(i)-1; fBR(i)=fBR(i)+1; fCL(i)=fCL(i)+1;
 
 i=i+1;
 Rnames{i} = 'CL2 + hv = CL + CL';
-k(:,i) = J32;
+k(:,i) = Jn32;
 Gstr{i,1} = 'CL2';
 fCL2(i)=fCL2(i)-1; fCL(i)=fCL(i)+1; fCL(i)=fCL(i)+1;
 
 i=i+1;
 Rnames{i} = 'CLO + hv = CL + O';
-k(:,i) = J33;
+k(:,i) = Jn33;
 Gstr{i,1} = 'CLO';
 fCLO(i)=fCLO(i)-1; fCL(i)=fCL(i)+1; fO(i)=fO(i)+1;
 

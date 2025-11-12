@@ -14,10 +14,10 @@ function validPath = GenFilePath(myPath)
 %
 % 20131019 GMW
 % 20190130 GMW  Minor change to defaultPath creation to avoid missing path errors.
+% 20251105 GMW  Modified to use the F0AMpath function.
 
 % use \Runs as default
-defaultPath = fileparts(mfilename('fullpath')); %path for this file (in \Core)
-defaultPath = [defaultPath(1:end-4) 'Runs'];
+defaultPath = fullfile(F0AMpath,'Runs');
 if ~isdir(defaultPath)
     warning('GenFilePath:MissingDirectory',...
         'Cannot find \Runs\ in F0AM directory. Fret not, I fix it.')
